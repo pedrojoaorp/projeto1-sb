@@ -12,6 +12,7 @@
 #define MAX_CODIGO_OBJ 128
 #define MAX_ARGS_OPR 2
 #define BUFFER_SIZE 1024
+#define MAX_TAMANHO_MEMORIA 1024
 
 typedef struct
 {
@@ -31,100 +32,70 @@ typedef struct
 
 typedef struct
 {
-    int endereco;
-    int opcode;
-    int args[MAX_ARGS_OPR];
-    int line;
+    int memoria[MAX_TAMANHO_MEMORIA];
+    int tamanho;
 } CodigoObj;
 
-int insertLineCodigoObj(CodigoObj *codigo, int endereco, int opcode, int *args, int *line, int maxLines)
+int insertInCodigoObj(CodigoObj *codigo, int dado)
 {
-    if (*line >= maxLines)
+    if (codigo->tamanho >= MAX_TAMANHO_MEMORIA)
     {
         return 0; // Tabela cheia
     }
-    codigo[*line].endereco = endereco;
-    codigo[*line].opcode = opcode;
-    codigo[*line].line = *line;
-    for (int j = 0; j < MAX_ARGS_OPR; j++)
-    {
-        codigo[*line].args[j] = args[j];
-    }
-
-    (*line)++;
+    codigo->memoria[codigo->tamanho] = dado;
+    (codigo->tamanho)++;
     return 1; // Sucesso
 }
 
-int findLineCodigoObjByAdress(CodigoObj *codigo, int maxLines, int endereco)
+int findByAddressInCodigoObj(CodigoObj *codigo, int endereco)
 {
-    for (int i = 0; i < maxLines; i++)
+    if (endereco >= codigo->tamanho)
     {
-        int currentAdress = codigo[i].endereco;
-        if (currentAdress == endereco)
-        {
-            return i; // Encontrou
-        }
-        if (i != (maxLines - 1))
-        {
-            int adressOfStartNextLine = codigo[i + 1].endereco;
-
-            if (endereco > currentAdress && endereco < adressOfStartNextLine)
-            {
-                return i;
-            }
-        }
+        return -1; // Não encontrado
     }
-    return -1; // Não encontrado
+    return codigo->memoria[endereco];
 }
 
-int updateArgByAdress(CodigoObj *codigo, int maxLines, int endereco, int novo_arg)
+int updateByAddressInCodigoObj(CodigoObj *codigo, int endereco, int novo_dado)
 {
-    int idx = findLineCodigoObjByAdress(codigo, maxLines, endereco);
-    if (idx >= 0)
+    if (endereco >= codigo->tamanho)
     {
-        int lineAdress = codigo[idx].endereco;
-        int idxArg = endereco - lineAdress - 1;
-        codigo[idx].args[idxArg] = novo_arg;
-        return 1; // Atualizado
+        return -1; // Não encontrado
     }
-    return 0; // Não encontrou para atualizar
+    int velho_dado;
+    velho_dado = codigo->memoria[endereco];
+    codigo->memoria[endereco] = novo_dado;
+    return velho_dado;
 }
 
-char *printCodObj(CodigoObj *codigo, int maxLines)
+char *printCodObj(CodigoObj *codigo)
 {
-    // Buffer para armazenar a string final
-    static char finalCod[BUFFER_SIZE];
-    finalCod[0] = '\0'; // Limpa o buffer
-
-    char temp[32];
-    for (int l = 0; l < maxLines; l++)
+    int buffer_size = 0;
+    for (size_t i = 0; i < codigo->tamanho; i++)
     {
-        // Adiciona opcode
-        snprintf(temp, sizeof(temp), "%d ", codigo[l].opcode);
-        strcat(finalCod, temp);
-
-        if (codigo[l].opcode == 9)
-        {
-            // Adiciona argumentos válidos
-            for (int a = 0; a < MAX_ARGS_OPR; a++)
-            {
-                int arg = codigo[l].args[a];
-                snprintf(temp, sizeof(temp), "%d ", arg);
-                strcat(finalCod, temp);
-            }
-        }
-        else
-        {
-            snprintf(temp, sizeof(temp), "%d ", codigo[l].args[0]);
-            strcat(finalCod, temp);
-        }
+        const char* format = (i == 0) ? "%d" : " %d";
+        buffer_size += snprintf(NULL, 0, format, codigo->memoria[i]);
+    }
+    buffer_size++;
+    
+    char finalCod = malloc(buffer_size);
+    if (finalCod == NULL)
+    {
+        perror("erro para alocar memória em printCodObj");
+        return NULL;
     }
 
-    // Remove espaço extra final, se existir
-    int len = strlen(finalCod);
-    if (len > 0 && finalCod[len - 1] == ' ')
-        finalCod[len - 1] = '\0';
+    char* current_pos = finalCod;
+    int remaining_space = BUFFER_SIZE;
 
+    for (size_t i = 0; i < codigo->tamanho; i++)
+    {
+        const char* format = (i == 0) ? "%d" : " %d";
+        int chars_added = snprintf(current_pos, remaining_space, format, codigo->memoria[i]);
+        current_pos += chars_added;
+        remaining_space -= chars_added;
+    }
+    printf("%s\n", finalCod);
     return finalCod;
 }
 
