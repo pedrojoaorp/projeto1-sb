@@ -128,6 +128,53 @@ char *printCodObj(CodigoObj *codigo, int maxLines)
     return finalCod;
 }
 
+char *printListaPendencias(TabelaSimbolo *table, int maxLines)
+{
+    // Buffer para armazenar a string final
+    static char list[BUFFER_SIZE];
+    list[0] = '\0'; // Limpa o buffer
+
+    char temp[32];
+    snprintf(temp, sizeof(temp), "LISTA DE PENDENCIAS:\n");
+    strcat(list, temp);
+
+    for (int l = 0; l < maxLines; l++)
+    {
+        snprintf(temp, sizeof(temp), "Simb: %s\nValor: %d\nDef: %d\n", table[l].simbolo, table[l].valor, table[l].def);
+        strcat(list, temp);
+
+        // Buffer para armazenar a string da lista desse simbolo em especifico
+        static char valuesList[MAX_PENDENCIAS];
+        valuesList[0] = '\0'; // Limpa o buffer
+        char tempValues[32];
+
+        snprintf(tempValues, sizeof(tempValues), "Pendencias: ");
+        strcat(valuesList, tempValues);
+
+        for (int p = 0; p < MAX_PENDENCIAS; p++)
+        {
+            snprintf(tempValues, sizeof(tempValues), "%d ", table[l].pendencias[p]);
+            strcat(valuesList, tempValues);
+        }
+
+        // Remove espaço extra final, se existir
+        int len = strlen(valuesList);
+        valuesList[len - 1] = '\n';
+
+        snprintf(temp, sizeof(temp), "%c", valuesList);
+        strcat(list, temp);
+    }
+
+    // Remove espaço extra final, se existir
+    int len = strlen(list);
+    if (len > 0 && list[len - 1] == ' ')
+    {
+        list[len - 1] = '\0';
+    }
+
+    return list;
+}
+
 int findSimboloTabela(TabelaSimbolo tabela[], int n, const char *nome)
 {
     for (int i = 0; i < n; i++)
