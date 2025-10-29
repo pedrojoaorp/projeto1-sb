@@ -247,74 +247,139 @@ int findMnemonic(const char *mnemonic, Mnemonic *table, int num)
     return -1; // Não encontrou
 }
 
-void separador(char *str_original, char *words[1024])
+int separador(char *str_original, char *words[1024])
 {
-    // recebe o ponteiro com o início da string a ser processada e uma array, e modifica a array para conter todas as palavras encontradas
     char *str = str_original;
     int word_count = 0;
 
     const char DELIMITER = ' ';
 
-    char *p = str; // 'p' fica no início da string
-    char *e;       // 'e' fica no final efetivo da string
-    char *q;       // 'q' vai iterando por toda a string e marca o começo de uma palavra
-    char *r;       // 'r' itera a partir do início da palavra em q até o fim da palavra
+    char *p = str;
+    char *e;
+    char *q;
+    char *r;
 
-    // colocar ponteiro 'e' no final efetivo da string
+    // Definir 'e' no final efetivo da string
     for (e = p; *e != '\0'; e++)
     {
-        if (*e == ';')
+        if (*e == ';' || *e == '\n')
             break;
-        // Loop basicamente vazio apenas para avançar 'e' até o fim ou até encontrar ';'
     }
 
     q = p;
 
     while (q < e)
     {
-        // procura o primeiro caractere interessante (não espaço branco) e coloca 'q' nele
-        while (q < e && *q == DELIMITER)
+        // Pula espaços e virgulas
+        while (q < e && (*q == DELIMITER || *q == ','))
         {
             q++;
         }
 
-        // condição de parada, se 'q' chegar ao final efetivo da string termina a função
         if (q == e)
         {
             break;
         }
 
         r = q;
-        // procura o primeiro caractere interessante (espaço branco) e coloca 'r' nele
-        while (r < e && *r != DELIMITER)
+        // procura o fim do token (espaço, virgula, ou fim)
+        while (r < e && *r != DELIMITER && *r != ',')
         {
             r++;
         }
 
-        // cria uma nova string e copia a palavra entre 'q' e 'r' nela, coloca essa nova palavra no array recebido
         long tamanho = r - q;
-        char *new_word = malloc(tamanho + 1);
-        for (long i = 0; i < tamanho; i++)
+        if (tamanho > 0)
         {
-            new_word[i] = q[i];
+            char *new_word = malloc(tamanho + 1);
+            for (long i = 0; i < tamanho; i++)
+            {
+                new_word[i] = q[i];
+            }
+            new_word[tamanho] = '\0';
+            words[word_count] = new_word;
+            word_count++;
         }
-        new_word[tamanho] = '\0';
-        words[word_count] = new_word;
-        word_count++;
 
-        // coloca 'q' depois da nova palavra e repete o processo
         q = r;
     }
 
-    // código de teste da funcionalidade da função
-    // for(int i = 0; i < word_count; i++){
-    //     long tamanho = words[i+1] - words[i];
-    //     printf("Palavra encontrada: '");
-    //     for (long j = 0; words[i][j] != '\0'; j++) {
-    //         putchar(words[i][j]);
-    //     }
-    //     printf("'\n");
-    // }
+    return word_count;
+}
+
+// código de teste da funcionalidade da função
+// for (int i = 0; i < word_count; i++)
+// {
+//     long tamanho = words[i + 1] - words[i];
+//     printf("Palavra encontrada: '");
+//     for (long j = 0; words[i][j] != '\0'; j++)
+//     {
+//         putchar(words[i][j]);
+//     }
+//     printf("'\n");
+
+void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO2)
+{
+    char linha[1024];   // buffer para a linha lida
+    char *tokens[1024]; // array para armazenar os tokens da linha
+    int word_count;
+
+    // Ler o arquivo de entrada linha por linha
+    while (fgets(linha, sizeof(linha), arquivoEntrada) != NULL)
+    {
+        // printf("%s", linha);
+        //  Obter tokens da linha, usando separador
+        word_count = separador(linha, tokens);
+
+        char *label = NULL;
+        char *opr = NULL;
+        char *arg1 = NULL;
+        char *arg2 = NULL;
+
+        if (word_count > 0)
+        {
+            // Se primeiro token terminar com ':' é label
+            int len = strlen(tokens[0]);
+            if (len > 0 && tokens[0][len - 1] == ':')
+            {
+                // Remove ':' do label
+                tokens[0][len - 1] = '\0';
+                label = tokens[0];
+                if (word_count > 1)
+                {
+                    opr = tokens[1];
+                    if (word_count > 2)
+                        arg1 = tokens[2];
+                    if (word_count > 3)
+                        arg2 = tokens[3];
+                }
+            }
+            else // Nao tem label, primeiro token eh operador
+            {
+                opr = tokens[0];
+                if (word_count > 1)
+                    arg1 = tokens[1];
+                if (word_count > 2)
+                    arg2 = tokens[2];
+            }
+            // Opcional: imprimir os tokens separados para conferência
+            fputs(linha, arquivoSaidaO2);
+            fprintf(arquivoSaidaO2, "Label: |%s|\n", label ? label : "(null)");
+            fprintf(arquivoSaidaO2, "OPR: |%s|\n", opr ? opr : "(null)");
+            fprintf(arquivoSaidaO2, "Arg1: |%s|\n", arg1 ? arg1 : "(null)");
+            fprintf(arquivoSaidaO2, "Arg2: |%s|\n", arg2 ? arg2 : "(null)");
+
+            // Escreve o conteúdo da linha nos arquivos de saída
+
+            fputs(linha, arquivoSaidaO1);
+            // fputs(linha, arquivoSaidaO2);
+
+            for (int i = 0; i < word_count; i++)
+            {
+                free(tokens[i]);
+            }
+        }
+    }
 }
 
 int main(int argc, char *argv[])
@@ -355,7 +420,6 @@ int main(int argc, char *argv[])
         snprintf(nomeArquivoSaidaO2, MAX_NOME_ARQUIVO, "%s.o2", nomeArquivoEntrada);
     }
 
-    // Carregando arquivos
     arquivoEntrada = fopen(nomeArquivoEntrada, "r");
     if (arquivoEntrada == NULL)
     {
@@ -365,62 +429,30 @@ int main(int argc, char *argv[])
     arquivoSaidaO1 = fopen(nomeArquivoSaidaO1, "w");
     if (arquivoSaidaO1 == NULL)
     {
-        perror("Erro ao abrir o arquivo de saída");
+        perror("Erro ao abrir o arquivo de saida");
         fclose(arquivoEntrada);
         return EXIT_FAILURE;
     }
     arquivoSaidaO2 = fopen(nomeArquivoSaidaO2, "w");
     if (arquivoSaidaO2 == NULL)
     {
-        perror("Erro ao abrir o arquivo de saída");
+        perror("Erro ao abrir o arquivo de saida");
         fclose(arquivoEntrada);
+        fclose(arquivoSaidaO1);
         return EXIT_FAILURE;
     }
 
-    printf("--- Conteúdo de %s (impresso no console) ---\n", nomeArquivoEntrada);
+    printf("--- Conteudo de %s (impresso no console) ---\n", nomeArquivoEntrada);
 
-    // Ler o arquivo de entrada linha por linha
-    while (fgets(linha, sizeof(linha), arquivoEntrada) != NULL)
-    {
-        // Imprime o conteúdo da linha no console
-        printf("%s", linha);
-
-        char *p, *q, *r, *e;
-        /* 'p' should point to the start of the buffer, not write into *p */
-        p = linha;
-        /* set 'e' to the effective end (either '\0' or ';') */
-        for (e = p; *e != '\0' && *e != ';'; e++)
-        {
-            /* advance until end or ';' */
-        }
-
-        /* skip leading spaces */
-        q = p;
-        while (q < e && *q == ' ')
-        {
-            q++;
-        }
-
-        /* r marks the end of the first token (or next space) */
-        r = q;
-        while (r < e && *r != ' ')
-        {
-            r++;
-        }
-
-        // Escreve o conteúdo da linha no arquivo de saída
-        fputs(linha, arquivoSaidaO1);
-        fputs(linha, arquivoSaidaO2);
-    }
+    // Chamada para a função de processamento
+    compileFile(arquivoEntrada, arquivoSaidaO1, arquivoSaidaO2);
 
     printf("------------------------------------------------\n");
-    // Mensagem de sucesso atualizada
     printf("Arquivo lido e copiado de %s para %s com sucesso!\n",
            nomeArquivoEntrada, nomeArquivoSaidaO1);
     printf("Arquivo lido e copiado de %s para %s com sucesso!\n",
            nomeArquivoEntrada, nomeArquivoSaidaO2);
 
-    // Fecha os arquivos
     fclose(arquivoEntrada);
     fclose(arquivoSaidaO1);
     fclose(arquivoSaidaO2);
