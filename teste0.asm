@@ -1,0 +1,6 @@
+LABEL:      OP A B 
+
+ROT:
+
+        ADD C D
+    SUB E F
