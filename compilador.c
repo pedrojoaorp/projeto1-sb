@@ -73,24 +73,24 @@ char *printCodObj(CodigoObj *codigo)
     int buffer_size = 0;
     for (size_t i = 0; i < codigo->tamanho; i++)
     {
-        const char* format = (i == 0) ? "%d" : " %d";
+        const char *format = (i == 0) ? "%d" : " %d";
         buffer_size += snprintf(NULL, 0, format, codigo->memoria[i]);
     }
     buffer_size++;
-    
-    char finalCod = malloc(buffer_size);
+
+    char *finalCod = (char *)malloc(buffer_size);
     if (finalCod == NULL)
     {
         perror("erro para alocar memória em printCodObj");
         return NULL;
     }
 
-    char* current_pos = finalCod;
-    int remaining_space = BUFFER_SIZE;
+    char *current_pos = finalCod;
+    int remaining_space = buffer_size;
 
     for (size_t i = 0; i < codigo->tamanho; i++)
     {
-        const char* format = (i == 0) ? "%d" : " %d";
+        const char *format = (i == 0) ? "%d" : " %d";
         int chars_added = snprintf(current_pos, remaining_space, format, codigo->memoria[i]);
         current_pos += chars_added;
         remaining_space -= chars_added;
