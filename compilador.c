@@ -11,6 +11,7 @@
 #define MAX_PENDENCIAS 50
 #define MAX_CODIGO_OBJ 128
 #define MAX_ARGS_OPR 2
+#define BUFFER_SIZE 1024
 
 typedef struct
 {
@@ -87,6 +88,44 @@ int updateArgByAdress(CodigoObj *codigo, int maxLines, int endereco, int novo_ar
         return 1; // Atualizado
     }
     return 0; // Não encontrou para atualizar
+}
+
+char *printCodObj(CodigoObj *codigo, int maxLines)
+{
+    // Buffer para armazenar a string final
+    static char finalCod[BUFFER_SIZE];
+    finalCod[0] = '\0'; // Limpa o buffer
+
+    char temp[32];
+    for (int l = 0; l < maxLines; l++)
+    {
+        // Adiciona opcode
+        snprintf(temp, sizeof(temp), "%d ", codigo[l].opcode);
+        strcat(finalCod, temp);
+
+        if (codigo[l].opcode == 9)
+        {
+            // Adiciona argumentos válidos
+            for (int a = 0; a < MAX_ARGS_OPR; a++)
+            {
+                int arg = codigo[l].args[a];
+                snprintf(temp, sizeof(temp), "%d ", arg);
+                strcat(finalCod, temp);
+            }
+        }
+        else
+        {
+            snprintf(temp, sizeof(temp), "%d ", codigo[l].args[0]);
+            strcat(finalCod, temp);
+        }
+    }
+
+    // Remove espaço extra final, se existir
+    int len = strlen(finalCod);
+    if (len > 0 && finalCod[len - 1] == ' ')
+        finalCod[len - 1] = '\0';
+
+    return finalCod;
 }
 
 int findSimboloTabela(TabelaSimbolo tabela[], int n, const char *nome)
