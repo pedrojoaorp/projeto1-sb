@@ -345,10 +345,80 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
             fputs(linha, arquivoSaidaO1);
             // fputs(linha, arquivoSaidaO2);
 
-            for (int i = 0; i < word_count; i++)
+            // for (int i = 0; i < word_count; i++)
+            // {
+            //     free(tokens[i]);
+            // }
+
+            /* 
+            if (label)
             {
-                free(tokens[i]);
+                add label to TS, like this:
+                try to find label in TS
+                if failed:
+                    insertSimboloTabela(tabela, n?(perguntar o que é), maxTable, label, CodigoObj.tamanho+1, 1) PERGUNTAR SOBRE IMPLEMENTACAO EXATA DA FUNCAO; PODE DAR ERRO TENTAR ACESSAR O CODIGOOBJ AQUI
+                if succeeded:
+                    ERRO, ROTULO JA DEFINIDO
             }
+            if (opr)
+            {
+                if (opr == SPACE)
+                {
+                    if (!label)
+                    {
+                        ERRO, SEM LABEL
+                    }
+                    if (arg1)
+                    {
+                        transform arg1 to int
+                        for (i = 0, i < arg1, i++)
+                        {
+                            insertInCodigoObj(0)
+                        }
+                    } else
+                    {
+                        insertInCodigoObj(0)
+                    }
+                } else if (opr == CONST)
+                {
+                    if (!label)
+                    {
+                        ERRO, SEM LABEL
+                    }
+                    if (arg1)
+                    {
+                        insertInCodigoObj(arg1)
+                    } else
+                    {
+                        ERRO, ARG FALTANDO
+                    }
+                } else
+                {
+                    turn opr String to Opcode using Mnemonics table
+                    insertInCodigoObj(opcode)
+                    if (arg1)
+                    {
+                        read arg
+                        if it's an address:
+                            transform string to int and insertInCodigoObj(address)
+                        if it's a label:
+                            try to find arg1's label from TS
+                            if doesn't exist:
+                                add to TS, start Lista de pendencias with current address, insertInCodigoObj(either 0 or the number added to the label), like this:
+                                insertSimboloTabela(tabela, n???, maxTable, arg1, 0 [valor temp], 0)
+                                insertPendenciaAtSimbolo(numero do simbolo que acabamos de criar, endereco atual)
+                                insertInCodigoObj(0)
+                            else if exists but is not defined:
+                                add current address to Lista de pendencias, insertInCodigoObj(either 0 or the number added to the label), like this:
+                                insertPendenciaAtSimbolo(numero do simbolo, endereco atual)
+                                insertInCodigoObj(0)
+                            else if exists and is defined:
+                                get label address and insertInCodigoObj(address):
+
+                    }
+                }
+            }
+            */
         }
     }
 }
