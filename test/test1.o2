@@ -78,7 +78,8 @@ Label: |ROT|
 OPR: |COPY|
 Arg1: |C|
 Arg2: |D|
-ULTIMA: COPY E, FLabel: |ULTIMA|
+ULTIMA: COPY E, F
+Label: |ULTIMA|
 OPR: |COPY|
 Arg1: |E|
 Arg2: |F|
