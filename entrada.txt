@@ -1,5 +1,0 @@
-Olá, mundo!
-Esta é a segunda linha.
-Testando o programa em C.
-Fim do arquivo.
-aaaaaaaaaaaaaaaaaaaa
