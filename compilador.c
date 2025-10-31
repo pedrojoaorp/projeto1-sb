@@ -19,6 +19,7 @@ typedef struct
     char mnemonic[MAX_TAMANHO_MNEMONIC]; // Nome do símbolo, ex: "ADD"
     int opcode;                          // Código numérico, ex: 1
     int size;                            // Tamanho em palavras, ex: 2
+    int quantArgs;
 } Mnemonic;
 
 typedef struct
@@ -192,13 +193,14 @@ int loadMnemonics(const char *filename, Mnemonic *table, int max_size)
     while (fgets(line, sizeof(line), f) && count < max_size)
     {
         char mnemonic[8];
-        int opcode, size;
-        // Lê formato: ADD,01,2
-        if (sscanf(line, "%7[^,],%d,%d", mnemonic, &opcode, &size) == 3)
+        int opcode, size, quantArgs;
+        // Lê formato: ADD,01,2,1
+        if (sscanf(line, "%7[^,],%d,%d,%d", mnemonic, &opcode, &size, &quantArgs) == 4)
         {
             strcpy(table[count].mnemonic, mnemonic);
             table[count].opcode = opcode;
             table[count].size = size;
+            table[count].quantArgs = quantArgs;
             count++;
         }
     }
