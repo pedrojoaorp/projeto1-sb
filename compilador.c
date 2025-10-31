@@ -170,7 +170,7 @@ int insertSimboloTabela(TabelaSimbolo tabela[], int *n, int maxTable, const char
     tabela[*n].def = def;
     tabela[*n].num_pendencias = 0;
     (*n)++;
-    return ((*n)-1); // Sucesso, retorna o ponteiro para o símbolo recém criado
+    return ((*n) - 1); // Sucesso, retorna o ponteiro para o símbolo recém criado
 }
 
 int insertPendenciaAtSimbolo(TabelaSimbolo *simbolo, int desloc)
@@ -290,6 +290,167 @@ int separador(char *str_original, char *words[1024])
 //     }
 //     printf("'\n");
 
+int writeCodObjOnFile(char *codObj, FILE *file, int lineToWrite)
+{
+    if (!codObj || !file || lineToWrite < 1)
+        return 0;
+
+    // Reposiciona para o início do arquivo
+    rewind(file);
+
+    char buffer[1024];
+    int currentLine = 1;
+
+    // Percorre até a linha anterior à desejada
+    while (currentLine < lineToWrite && fgets(buffer, sizeof(buffer), file) != NULL)
+    {
+        currentLine++;
+    }
+
+    long pos = ftell(file);
+
+    if (currentLine == lineToWrite)
+    {
+        // Move para a posição do início da linha que queremos sobrescrever
+        fseek(file, pos, SEEK_SET);
+
+        // Escreve a string na linha, seguida de nova linha
+        fprintf(file, "%s\n", codObj);
+
+        return 1;
+    }
+    else if (currentLine < lineToWrite)
+    {
+        // A linha desejada ainda não existe; adicionar novas linhas em branco até chegar nela
+        // Posiciona no fim do arquivo
+        fseek(file, 0, SEEK_END);
+
+        while (currentLine < lineToWrite)
+        {
+            fprintf(file, "\n");
+            currentLine++;
+        }
+
+        fprintf(file, "%s\n", codObj);
+        return 1;
+    }
+
+    return 0; // Linha inválida ou erro
+}
+
+char *CodigoObjToString(CodigoObj *codObj, int maxCodObj)
+{
+    if (!codObj || maxCodObj <= 0)
+        return NULL;
+
+    /* estimate buffer size: allow up to 11 chars per int + 1 space, plus final NUL */
+    size_t per_int = 4;
+    size_t buf_size = (size_t)maxCodObj * per_int + 1;
+    char *codObjString = (char *)malloc(buf_size);
+    if (!codObjString)
+        return NULL;
+
+    char *p = codObjString;
+    size_t remaining = buf_size;
+    int written = 0;
+
+    for (int i = 0; i < codObj->tamanho && i < maxCodObj; i++)
+    {
+        if (i == 0)
+            written = snprintf(p, remaining, "%d", codObj->memoria[i]);
+        else
+            written = snprintf(p, remaining, " %d", codObj->memoria[i]);
+
+        if (written < 0 || (size_t)written >= remaining)
+        {
+            /* safety: ensure NUL termination and return what we have */
+            codObjString[buf_size - 1] = '\0';
+            return codObjString;
+        }
+
+        p += written;
+        remaining -= written;
+    }
+
+    return codObjString;
+}
+
+int resolvePendencias(TabelaSimbolo *ts, int maxTs, CodigoObj *codObj, int maxCodObj)
+{
+    for (int t = 0; t < maxTs; t++)
+    {
+        TabelaSimbolo lineSimb = ts[t];
+        int valueSimb;
+        if (lineSimb.def)
+        {
+            valueSimb = lineSimb.valor;
+
+            for (int p = 0; p < lineSimb.num_pendencias; p++)
+            {
+                int pendencia = lineSimb.pendencias[p];
+
+                /* valida índice e escreve o valor no endereço da pendência */
+                if (pendencia >= 0 && pendencia < maxCodObj && pendencia < codObj->tamanho)
+                {
+                    codObj->memoria[pendencia] = valueSimb;
+                }
+            }
+        }
+    }
+
+    return 1;
+}
+
+int makeO2(TabelaSimbolo *ts, int maxTs, CodigoObj *codObj, int maxCodObj, FILE *arquivoSaidaO2)
+{
+    int isResolved = resolvePendencias(ts, maxTs, codObj, maxCodObj);
+    char *codObjString;
+    if (isResolved)
+    {
+        codObjString = CodigoObjToString(codObj, maxCodObj);
+
+        if (writeCodObjOnFile(codObjString, arquivoSaidaO2, 1))
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/*
+
+int main()
+{
+    TabelaSimbolo simbolos[6] = {
+        {"INICIO", 40, 1, {2, 8}, 2},  // resolve memória[2] e memória[8] com valor 40
+        {"CONST1", 99, 1, {6, 10}, 2}, // resolve memória[6] e memória[10] com 99
+        {"MID", 55, 1, {3}, 1},        // resolve memória[3] com 55
+        {"VAR", -1, 0, {1, 7}, 2},     // NÃO resolve nada (indefinido)
+        {"FINAL", 77, 1, {11}, 1},     // resolve memória[11] com 77
+        {"AUX", 12, 1, {0, 9}, 2}      // resolve memória[0] e memória[9] com 12
+    };
+    CodigoObj obj = {.memoria = {0, 0, 0, 0, 24, 36, 0, 0, 0, 0, 0, 0}, .tamanho = 12};
+
+    // Crie um arquivo de saída
+    FILE *fout = fopen("saida.txt", "w");
+    if (!fout)
+    {
+        printf("Erro ao abrir arquivo de saída!\n");
+        return 1;
+    }
+
+    // Chame a função de "montagem"
+    int resultado = makeO2(simbolos, 6, &obj, 12, fout);
+    fclose(fout);
+    return 0;
+}
+*/
+
+int makeO1()
+{
+}
+
 void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO2)
 {
     char linha[1024];   // buffer para a linha lida
@@ -300,7 +461,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     TabelaSimbolo tabelaSimbolos[MAX_QTD_SIMBOLOS];
     int qtd_simbolos = 0;
     Mnemonic mnemonicTable[MAX_MNEMONIC];
-    int qtd_mnemonicos = loadMnemonics("upcode.txt", &mnemonicTable, MAX_MNEMONIC);
+    int qtd_mnemonicos = loadMnemonics("upcode.txt", mnemonicTable, MAX_MNEMONIC);
 
     // Ler o arquivo de entrada linha por linha
     while (fgets(linha, sizeof(linha), arquivoEntrada) != NULL)
@@ -341,6 +502,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     arg2 = tokens[2];
             }
             // Opcional: imprimir os tokens separados para conferência
+            /*
             fputs(linha, arquivoSaidaO2);
             fprintf(arquivoSaidaO2, "Label: |%s|\n", label ? label : "(null)");
             fprintf(arquivoSaidaO2, "OPR: |%s|\n", opr ? opr : "(null)");
@@ -350,6 +512,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
             // Escreve o conteúdo da linha nos arquivos de saída
 
             fputs(linha, arquivoSaidaO1);
+            */
             // fputs(linha, arquivoSaidaO2);
 
             // for (int i = 0; i < word_count; i++)
@@ -363,7 +526,8 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 if (labelInTS != -1)
                 {
                     // ERRO, REDEFINICAO DE ROTULO
-                } else
+                }
+                else
                 {
                     insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, label, (codigo.tamanho + 1), 1);
                 }
@@ -383,12 +547,13 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                         {
                             insertInCodigoObj(&codigo, 0);
                         }
-                        
-                    } else
+                    }
+                    else
                     {
                         insertInCodigoObj(&codigo, 0);
                     }
-                } else if (opr == "CONST")
+                }
+                else if (opr == "CONST")
                 {
                     if (!label)
                     {
@@ -397,11 +562,13 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     if (arg1)
                     {
                         insertInCodigoObj(&codigo, atoi(arg1));
-                    } else
+                    }
+                    else
                     {
                         // ERRO, ARG FALTANDO
                     }
-                } else
+                }
+                else
                 {
                     int opcode = mnemonicTable[findMnemonic(opr, &mnemonicTable, qtd_mnemonicos)].opcode;
                     insertInCodigoObj(&codigo, opcode);
@@ -413,11 +580,13 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                             int novo_simb = insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, arg1, 0, 0);
                             insertPendenciaAtSimbolo(novo_simb, (codigo.tamanho + 1));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
-                        } else if (tabelaSimbolos[arg1InTS].def)
+                        }
+                        else if (tabelaSimbolos[arg1InTS].def)
                         {
                             insertPendenciaAtSimbolo(&tabelaSimbolos[arg1InTS], (codigo.tamanho + 1));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
-                        } else
+                        }
+                        else
                         {
                             insertInCodigoObj(&codigo, tabelaSimbolos[arg1InTS].valor);
                         }
@@ -430,88 +599,96 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                             int novo_simb = insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, arg2, 0, 0);
                             insertPendenciaAtSimbolo(novo_simb, (codigo.tamanho + 1));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
-                        } else if (tabelaSimbolos[arg2InTS].def)
+                        }
+                        else if (tabelaSimbolos[arg2InTS].def)
                         {
                             insertPendenciaAtSimbolo(&tabelaSimbolos[arg2InTS], (codigo.tamanho + 1));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
-                        } else
+                        }
+                        else
                         {
                             insertInCodigoObj(&codigo, tabelaSimbolos[arg2InTS].valor);
                         }
                     }
                 }
             }
-            
-            
-            /* 
-            if (label)
-            {
-                add label to TS, like this:
-                try to find label in TS
-                if failed:
-                    insertSimboloTabela(tabela, n?(perguntar o que é), maxTable, label, CodigoObj.tamanho+1, 1) PERGUNTAR SOBRE IMPLEMENTACAO EXATA DA FUNCAO; PODE DAR ERRO TENTAR ACESSAR O CODIGOOBJ AQUI
-                if succeeded:
-                    ERRO, ROTULO JA DEFINIDO
-            }
-            if (opr)
-            {
-                if (opr == SPACE)
-                {
-                    if (!label)
-                    {
-                        ERRO, SEM LABEL
-                    }
-                    if (arg1)
-                    {
-                        transform arg1 to int
-                        for (i = 0, i < arg1, i++)
-                        {
-                            insertInCodigoObj(0)
-                        }
-                    } else
-                    {
-                        insertInCodigoObj(0)
-                    }
-                } else if (opr == CONST)
-                {
-                    if (!label)
-                    {
-                        ERRO, SEM LABEL
-                    }
-                    if (arg1)
-                    {
-                        insertInCodigoObj(arg1)
-                    } else
-                    {
-                        ERRO, ARG FALTANDO
-                    }
-                } else
-                {
-                    turn opr String to Opcode using Mnemonics table
-                    insertInCodigoObj(opcode)
-                    if (arg1)
-                    {
-                        read arg1's label
-                        try to find arg1's label from TS
-                        if doesn't exist:
-                            add to TS, start Lista de pendencias with current address, insertInCodigoObj(either 0 or the number added to the label), like this:
-                            insertSimboloTabela(tabela, n???, maxTable, arg1, 0 [valor temp], 0)
-                            insertPendenciaAtSimbolo(numero do simbolo que acabamos de criar, endereco atual)
-                            insertInCodigoObj(0)
-                        else if exists but is not defined:
-                            add current address to Lista de pendencias, insertInCodigoObj(either 0 or the number added to the label), like this:
-                            insertPendenciaAtSimbolo(numero do simbolo, endereco atual)
-                            insertInCodigoObj(0)
-                        else if exists and is defined:
-                            get label address and insertInCodigoObj(address)
+        }
+    }
 
-                    }
-                }
+    char *codObjString = CodigoObjToString(&codigo, codigo.tamanho);
+    char *list = printListaPendencias(tabelaSimbolos, tabelaSimbolos->num_pendencias);
+    printf("codigo objeto o1: %s\n", codObjString);
+    printf("%s\n", list);
+    // Chame a função de "montagem"
+    int resultado = makeO2(tabelaSimbolos, qtd_simbolos, &codigo, codigo.tamanho, arquivoSaidaO2);
+    fclose(arquivoSaidaO2);
+}
+/*
+if (label)
+{
+    add label to TS, like this:
+    try to find label in TS
+    if failed:
+        insertSimboloTabela(tabela, n?(perguntar o que é), maxTable, label, CodigoObj.tamanho+1, 1) PERGUNTAR SOBRE IMPLEMENTACAO EXATA DA FUNCAO; PODE DAR ERRO TENTAR ACESSAR O CODIGOOBJ AQUI
+    if succeeded:
+        ERRO, ROTULO JA DEFINIDO
+}
+if (opr)
+{
+    if (opr == SPACE)
+    {
+        if (!label)
+        {
+            ERRO, SEM LABEL
+        }
+        if (arg1)
+        {
+            transform arg1 to int
+            for (i = 0, i < arg1, i++)
+            {
+                insertInCodigoObj(0)
             }
-            */
+        } else
+        {
+            insertInCodigoObj(0)
+        }
+    } else if (opr == CONST)
+    {
+        if (!label)
+        {
+            ERRO, SEM LABEL
+        }
+        if (arg1)
+        {
+            insertInCodigoObj(arg1)
+        } else
+        {
+            ERRO, ARG FALTANDO
+        }
+    } else
+    {
+        turn opr String to Opcode using Mnemonics table
+        insertInCodigoObj(opcode)
+        if (arg1)
+        {
+            read arg1's label
+            try to find arg1's label from TS
+            if doesn't exist:
+                add to TS, start Lista de pendencias with current address, insertInCodigoObj(either 0 or the number added to the label), like this:
+                insertSimboloTabela(tabela, n???, maxTable, arg1, 0 [valor temp], 0)
+                insertPendenciaAtSimbolo(numero do simbolo que acabamos de criar, endereco atual)
+                insertInCodigoObj(0)
+            else if exists but is not defined:
+                add current address to Lista de pendencias, insertInCodigoObj(either 0 or the number added to the label), like this:
+                insertPendenciaAtSimbolo(numero do simbolo, endereco atual)
+                insertInCodigoObj(0)
+            else if exists and is defined:
+                get label address and insertInCodigoObj(address)
+
         }
     }
 }
+*/
 
 int main(int argc, char *argv[])
 {
@@ -590,3 +767,8 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+/*
+
+
+
+*/
