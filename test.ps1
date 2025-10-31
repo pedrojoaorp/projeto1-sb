@@ -14,14 +14,14 @@ if (-not (Test-Path $ExpectedFile)) {
 
 # Executa o compiladpr
 Write-Host "Executando preprocessador..."
-.\precompilador.exe $AsmFile
+.\compilador.exe $AsmFile
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Erro na execucao do compilador" -ForegroundColor Red
     exit $LASTEXITCODE
 }
 
 # Define caminho do arquivo gerado
-$PreFile = [System.IO.Path]::ChangeExtension($AsmFile, '.o1')
+$PreFile = [System.IO.Path]::ChangeExtension($AsmFile, '.o2')
 
 # Função para ler linhas não vazias e trim de ambas pontas
 function Get-ContentTrimmed($path) {
