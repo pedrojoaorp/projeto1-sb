@@ -69,6 +69,16 @@ int updateByAddressInCodigoObj(CodigoObj *codigo, int endereco, int novo_dado)
     return velho_dado;
 }
 
+int addToAddressInCodigoObj(CodigoObj *codigo, int endereco, int novo_dado)
+{
+    if (endereco >= codigo->tamanho)
+    {
+        return -1; // Não encontrado
+    }
+    codigo->memoria[endereco] += novo_dado;
+    return codigo->memoria[endereco];
+}
+
 char *printCodObj(CodigoObj *codigo)
 {
     int buffer_size = 0;
@@ -442,7 +452,6 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 }
             }
             
-            
             /* 
             if (label)
             {
@@ -511,6 +520,26 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
             */
         }
     }
+    for (size_t i = 0; i < qtd_simbolos; i++)
+    {
+        TabelaSimbolo linhaTab = tabelaSimbolos[i];
+        if (linhaTab.def == 0)
+        {
+            for (size_t j = 0; j < linhaTab.num_pendencias; j++)
+            {
+                addToAddressInCodigoObj(&codigo, j, linhaTab.valor);
+            }
+        }
+    }
+    
+    /*
+    Logica de resolucao da lista de pendencias
+    for i in range(qtd_simbolos):
+        linha = tabelaSimbolos[i]
+        if linha.def == 0:
+            for j in linha.pendencias:
+                addToAddressInCodigoObj(codigo, j, linha.valor)
+    */
 }
 
 int main(int argc, char *argv[])
