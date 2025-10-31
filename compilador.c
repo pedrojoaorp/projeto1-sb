@@ -13,6 +13,7 @@
 #define MAX_ARGS_OPR 2
 #define BUFFER_SIZE 1024
 #define MAX_TAMANHO_MEMORIA 1024
+#define MAX_QTD_SIMBOLOS 1024
 
 typedef struct
 {
@@ -67,6 +68,16 @@ int updateByAddressInCodigoObj(CodigoObj *codigo, int endereco, int novo_dado)
     velho_dado = codigo->memoria[endereco];
     codigo->memoria[endereco] = novo_dado;
     return velho_dado;
+}
+
+int addToAddressInCodigoObj(CodigoObj *codigo, int endereco, int novo_dado)
+{
+    if (endereco >= codigo->tamanho)
+    {
+        return -1; // Não encontrado
+    }
+    codigo->memoria[endereco] += novo_dado;
+    return codigo->memoria[endereco];
 }
 
 char *printCodObj(CodigoObj *codigo)
@@ -170,7 +181,7 @@ int insertSimboloTabela(TabelaSimbolo tabela[], int *n, int maxTable, const char
     tabela[*n].def = def;
     tabela[*n].num_pendencias = 0;
     (*n)++;
-    return 1; // Sucesso
+    return ((*n)-1); // Sucesso, retorna o ponteiro para o símbolo recém criado
 }
 
 int insertPendenciaAtSimbolo(TabelaSimbolo *simbolo, int desloc)
@@ -297,6 +308,12 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     char *tokens[1024]; // array para armazenar os tokens da linha
     int word_count;
 
+    CodigoObj codigo;
+    TabelaSimbolo tabelaSimbolos[MAX_QTD_SIMBOLOS];
+    int qtd_simbolos = 0;
+    Mnemonic mnemonicTable[MAX_MNEMONIC];
+    int qtd_mnemonicos = loadMnemonics("upcode.txt", &mnemonicTable, MAX_MNEMONIC);
+
     // Ler o arquivo de entrada linha por linha
     while (fgets(linha, sizeof(linha), arquivoEntrada) != NULL)
     {
@@ -347,12 +364,184 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
             fputs(linha, arquivoSaidaO1);
             // fputs(linha, arquivoSaidaO2);
 
-            for (int i = 0; i < word_count; i++)
+            // for (int i = 0; i < word_count; i++)
+            // {
+            //     free(tokens[i]);
+            // }
+
+            if (label)
             {
-                free(tokens[i]);
+                int labelInTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, label);
+                if (labelInTS != -1)
+                {
+                    // ERRO, REDEFINICAO DE ROTULO
+                } else
+                {
+                    insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, label, (codigo.tamanho + 1), 1);
+                }
+            }
+            if (opr)
+            {
+                if (opr == "SPACE")
+                {
+                    if (!label)
+                    {
+                        // ERRO, SEM LABEL
+                    }
+                    if (arg1)
+                    {
+                        int arg = atoi(arg1);
+                        for (size_t i = 0; i < arg; i++)
+                        {
+                            insertInCodigoObj(&codigo, 0);
+                        }
+                        
+                    } else
+                    {
+                        insertInCodigoObj(&codigo, 0);
+                    }
+                } else if (opr == "CONST")
+                {
+                    if (!label)
+                    {
+                        // ERRO, SEM LABEL
+                    }
+                    if (arg1)
+                    {
+                        insertInCodigoObj(&codigo, atoi(arg1));
+                    } else
+                    {
+                        // ERRO, ARG FALTANDO
+                    }
+                } else
+                {
+                    int opcode = mnemonicTable[findMnemonic(opr, &mnemonicTable, qtd_mnemonicos)].opcode;
+                    insertInCodigoObj(&codigo, opcode);
+                    if (arg1)
+                    {
+                        int arg1InTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, arg1);
+                        if (arg1InTS == -1)
+                        {
+                            int novo_simb = insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, arg1, 0, 0);
+                            insertPendenciaAtSimbolo(novo_simb, (codigo.tamanho + 1));
+                            insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
+                        } else if (tabelaSimbolos[arg1InTS].def)
+                        {
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[arg1InTS], (codigo.tamanho + 1));
+                            insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
+                        } else
+                        {
+                            insertInCodigoObj(&codigo, tabelaSimbolos[arg1InTS].valor);
+                        }
+                    }
+                    if (arg2)
+                    {
+                        int arg2InTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, arg2);
+                        if (arg2InTS == -1)
+                        {
+                            int novo_simb = insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, arg2, 0, 0);
+                            insertPendenciaAtSimbolo(novo_simb, (codigo.tamanho + 1));
+                            insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
+                        } else if (tabelaSimbolos[arg2InTS].def)
+                        {
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[arg2InTS], (codigo.tamanho + 1));
+                            insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
+                        } else
+                        {
+                            insertInCodigoObj(&codigo, tabelaSimbolos[arg2InTS].valor);
+                        }
+                    }
+                }
+            }
+            
+            /* 
+            if (label)
+            {
+                add label to TS, like this:
+                try to find label in TS
+                if failed:
+                    insertSimboloTabela(tabela, n?(perguntar o que é), maxTable, label, CodigoObj.tamanho+1, 1) PERGUNTAR SOBRE IMPLEMENTACAO EXATA DA FUNCAO; PODE DAR ERRO TENTAR ACESSAR O CODIGOOBJ AQUI
+                if succeeded:
+                    ERRO, ROTULO JA DEFINIDO
+            }
+            if (opr)
+            {
+                if (opr == SPACE)
+                {
+                    if (!label)
+                    {
+                        ERRO, SEM LABEL
+                    }
+                    if (arg1)
+                    {
+                        transform arg1 to int
+                        for (i = 0, i < arg1, i++)
+                        {
+                            insertInCodigoObj(0)
+                        }
+                    } else
+                    {
+                        insertInCodigoObj(0)
+                    }
+                } else if (opr == CONST)
+                {
+                    if (!label)
+                    {
+                        ERRO, SEM LABEL
+                    }
+                    if (arg1)
+                    {
+                        insertInCodigoObj(arg1)
+                    } else
+                    {
+                        ERRO, ARG FALTANDO
+                    }
+                } else
+                {
+                    turn opr String to Opcode using Mnemonics table
+                    insertInCodigoObj(opcode)
+                    if (arg1)
+                    {
+                        read arg1's label
+                        try to find arg1's label from TS
+                        if doesn't exist:
+                            add to TS, start Lista de pendencias with current address, insertInCodigoObj(either 0 or the number added to the label), like this:
+                            insertSimboloTabela(tabela, n???, maxTable, arg1, 0 [valor temp], 0)
+                            insertPendenciaAtSimbolo(numero do simbolo que acabamos de criar, endereco atual)
+                            insertInCodigoObj(0)
+                        else if exists but is not defined:
+                            add current address to Lista de pendencias, insertInCodigoObj(either 0 or the number added to the label), like this:
+                            insertPendenciaAtSimbolo(numero do simbolo, endereco atual)
+                            insertInCodigoObj(0)
+                        else if exists and is defined:
+                            get label address and insertInCodigoObj(address)
+
+                    }
+                }
+            }
+            */
+        }
+    }
+    for (size_t i = 0; i < qtd_simbolos; i++)
+    {
+        TabelaSimbolo linhaTab = tabelaSimbolos[i];
+        if (linhaTab.def == 0)
+        {
+            for (size_t j = 0; j < linhaTab.num_pendencias; j++)
+            {
+                addToAddressInCodigoObj(&codigo, j, linhaTab.valor);
             }
         }
     }
+    
+    /*
+    Logica de resolucao da lista de pendencias
+    for i in range(qtd_simbolos):
+        linha = tabelaSimbolos[i]
+        if linha.def == 0:
+            for j in linha.pendencias:
+                addToAddressInCodigoObj(codigo, j, linha.valor)
+    */
 }
 
 int main(int argc, char *argv[])
