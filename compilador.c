@@ -187,7 +187,9 @@ int insertSimboloTabela(TabelaSimbolo tabela[], int *n, int maxTable, const char
 int insertPendenciaAtSimbolo(TabelaSimbolo *simbolo, int desloc)
 {
     if (simbolo->num_pendencias >= MAX_PENDENCIAS)
+    {
         return 0; // Lista cheia
+    }
     simbolo->pendencias[simbolo->num_pendencias] = desloc;
     simbolo->num_pendencias++;
     return 1; // Sucesso
@@ -554,7 +556,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     if (tabelaSimbolos[labelInTS].def == 0)
                     {
                         tabelaSimbolos[labelInTS].def = 1;
-                        tabelaSimbolos[labelInTS].valor = (codigo.tamanho + 1);
+                        tabelaSimbolos[labelInTS].valor = (codigo.tamanho);
                     } else
                     {
                         // ERRO, REDEFINICAO DE ROTULO
@@ -562,11 +564,14 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 }
                 else
                 {
-                    insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, label, (codigo.tamanho + 1), 1);
+                    insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, label, (codigo.tamanho), 1);
                 }
             }
             if (opr)
             {
+                printf("|%s|--", opr);
+                printf("%d (opr == 'SPACE')\n", (opr == "SPACE"));
+                
                 if (opr == "SPACE")
                 {
                     if (!label)
@@ -614,7 +619,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                             insertPendenciaAtSimbolo(&tabelaSimbolos[novo_simb], (codigo.tamanho + 1));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
                         }
-                        else if (tabelaSimbolos[arg1InTS].def)
+                        else if (tabelaSimbolos[arg1InTS].def == 0)
                         {
                             insertPendenciaAtSimbolo(&tabelaSimbolos[arg1InTS], (codigo.tamanho + 1));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
