@@ -551,7 +551,14 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 int labelInTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, label);
                 if (labelInTS != -1)
                 {
-                    // ERRO, REDEFINICAO DE ROTULO
+                    if (tabelaSimbolos[labelInTS].def == 0)
+                    {
+                        tabelaSimbolos[labelInTS].def = 1;
+                        tabelaSimbolos[labelInTS].valor = (codigo.tamanho + 1);
+                    } else
+                    {
+                        // ERRO, REDEFINICAO DE ROTULO
+                    }
                 }
                 else
                 {
