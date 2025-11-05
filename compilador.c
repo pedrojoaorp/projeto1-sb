@@ -560,7 +560,6 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     char linha[1024];   // buffer para a linha lida
     char *tokens[1024]; // array para armazenar os tokens da linha
     int word_count;
-    int current_line = 0;
 
     CodigoObj codigo;
     TabelaSimbolo tabelaSimbolos[MAX_QTD_SIMBOLOS];
