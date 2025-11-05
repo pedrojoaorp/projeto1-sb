@@ -544,7 +544,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     else
                     {
-                        // ERRO, REDEFINICAO DE ROTULO
+                        printf("Rótulo [%s] sendo declarado novamente na linha [%d]", label, current_line);  // ERRO: rotulo declarado duas vezes em lugares diferentes
                     }
                 }
                 else
