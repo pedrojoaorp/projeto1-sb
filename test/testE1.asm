@@ -1,12 +1,12 @@
     INPUT N 
     LOAD N 
 FAT: SUB ONE 
-    JNPZ FIM 
+    JMPZ FIM 
     STORE AUX 
     MULT N 
 FIM: STORE N ;rotulo declarado duas vezes
     LOAD AUX 
-    JNP FAT 
+    JMP FAT 
 FIM: OUTPUT N 
     STOP
 AUX: SPACE 3

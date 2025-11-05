@@ -1,12 +1,12 @@
     INPUT N 
     LOAD N 
 FAT: SUB ONE 
-    JNPZ FIM 
+    JMPZ FIM 
     STORE AUX 
     MULT N 
     STORE N 
     LOAD AUX 
-    JNP FAT 
+    JMP FAT 
 FIM: OUTPUT N 5 ;instrução com número de parâmetros errado
     STOP
 AUX: SPACE 3

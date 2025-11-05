@@ -1,12 +1,12 @@
     INPUT N 
     LOAD N 
 FAT: SUB ONE 
-    JNPZ FIM 
+    JMPZ FIM 
     STORE AUX 
     MULT N 
     STORE N 
     LOAD AUX 
-    JNP FAT 
+    JMP FAT 
 100FIM: OUTPUT N ;erro léxico
     STOP
 AUX: SPACE 3

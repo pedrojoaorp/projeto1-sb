@@ -544,7 +544,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     else
                     {
-                        printf("-- ERRO: Rótulo [%s] sendo declarado novamente na linha [%d]", label, current_line);  // ERRO: rotulo declarado duas vezes em lugares diferentes
+                        printf("-- ERRO: Rótulo [%s] sendo declarado novamente na linha [%d]\n", label, current_line);  // ERRO: rotulo declarado duas vezes em lugares diferentes
                     }
                 }
                 else
@@ -561,12 +561,12 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     printf("%d (opr == 'SPACE')\n", (strcmp(opr, "SPACE") == 0));
                     if (arg2)
                     {
-                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
                     }
                     
                     if (!label)
                     {
-                        printf("-- ERRO: [%s] na linha [%d] não tem rótulo sendo declarado", opr, current_line);
+                        printf("-- ERRO: [%s] na linha [%d] não tem rótulo sendo declarado\n", opr, current_line);
                     }
                     if (arg1)
                     {
@@ -591,12 +591,12 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     printf("%d (opr == 'CONST')\n", (strcmp(opr, "CONST") == 0));
                     if (arg2)
                     {
-                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
                     }
 
                     if (!label)
                     {
-                        printf("-- ERRO: [%s] na linha [%d] não tem rótulo sendo declarado", opr, current_line);
+                        printf("-- ERRO: [%s] na linha [%d] não tem rótulo sendo declarado\n", opr, current_line);
                     }
                     if (arg1)
                     {
@@ -604,15 +604,20 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     else
                     {
-                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
                     }
                 }
                 else
                 {
-                    int opcode = mnemonicTable[findMnemonic(opr, mnemonicTable, qtd_mnemonicos)].opcode;
-                    if (opcode == -1)
+                    int opcode_index = findMnemonic(opr, mnemonicTable, qtd_mnemonicos);
+                    int opcode;
+                    if (opcode_index != -1)
                     {
-                        printf("-- ERRO: instrução na linha [%d] [%s] é inválida", current_line, opr);
+                        opcode = mnemonicTable[opcode_index].opcode;
+                    } else
+                    {
+                        printf("-- ERRO: instrução na linha [%d] [%s] é inválida\n", current_line, opr);
+                        opcode = -1;
                     }
 
                     int arg_count = 0;
@@ -624,9 +629,9 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     {
                         arg_count++;
                     }
-                    if (mnemonicTable[opcode].quantArgs != arg_count)
+                    if (mnemonicTable[opcode_index].quantArgs != arg_count)
                     {
-                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
                     }
                     
                     
@@ -685,7 +690,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     {
         if (tabelaSimbolos[i].def == 0)
         {
-            printf("-- ERRO: Rótulo [%s] não declarado", tabelaSimbolos[i].simbolo);  // ERRO: rotulo não declarado
+            printf("-- ERRO: Rótulo [%s] não declarado\n", tabelaSimbolos[i].simbolo);  // ERRO: rotulo não declarado
         }
     }
     

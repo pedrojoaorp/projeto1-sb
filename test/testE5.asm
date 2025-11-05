@@ -1,12 +1,12 @@
     INPUT N 
     LOAD N 
 FAT: SUB ONE 
-    JNPZ FIM 
+    JMPZ FIM 
     STORE AUX 
     MULT N 
     STORE N 
     LOAD AUX 
-    JNP FAT 
+    JMP FAT 
 FIM: Print N ;instrução inexistente
     STOP
 AUX: SPACE 3
