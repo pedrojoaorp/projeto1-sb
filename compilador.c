@@ -280,17 +280,6 @@ int separador(char *str_original, char *words[1024])
     return word_count;
 }
 
-// código de teste da funcionalidade da função
-// for (int i = 0; i < word_count; i++)
-// {
-//     long tamanho = words[i + 1] - words[i];
-//     printf("Palavra encontrada: '");
-//     for (long j = 0; words[i][j] != '\0'; j++)
-//     {
-//         putchar(words[i][j]);
-//     }
-//     printf("'\n");
-
 int writeCodObjOnFile(char *codObj, FILE *file, int lineToWrite)
 {
     if (!codObj || !file || lineToWrite < 1)
@@ -454,16 +443,6 @@ int makeO1(TabelaSimbolo *ts, int maxTs, CodigoObj *codObj, int maxCodObj, FILE 
 
     int a = writeCodObjOnFile(codObjString, arquivoSaidaO1, 1);
     int b = writePendenciasOnFile(listaPendenciasString, arquivoSaidaO1, 2);
-
-    // if (a || b)
-    // {
-    //     free(codObjString);
-    //     free(listaPendenciasString);
-    //     return 1;
-    // }
-
-    // free(codObjString);
-    // free(listaPendenciasString);
     return 0;
 }
 
@@ -580,7 +559,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
 
         if (!verifyQuantLabelAtLine(linha))
         {
-            printf("(%d) ERRO SINTATICO: multiplos rotulos na linha: %s\n", current_line, linha);
+            printf("-- ERRO: Múltiplos rótulos na linha [%d]: [%s]\n", current_line, linha);
             continue;
         }
 
@@ -603,7 +582,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
 
                 if (!verifyLabel(label))
                 {
-                    printf("(%d) ERRO LEXICO: %s\n", current_line, label);
+                    printf("-- ERRO: Erro léxico na linha [%d]: [%s]", current_line, label);
                     continue;
                 }
 
@@ -705,7 +684,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                         opcode = mnemonicTable[opcode_index].opcode;
                     } else
                     {
-                        printf("-- ERRO: instrução na linha [%d] [%s] é inválida\n", current_line, opr);
+                        printf("-- ERRO: Instrução na linha [%d] [%s] é inválida\n", current_line, opr);
                         opcode = -1;
                     }
 
