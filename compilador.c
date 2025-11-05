@@ -479,6 +479,82 @@ int makeO2(TabelaSimbolo *ts, int maxTs, CodigoObj *codObj, int maxCodObj, FILE 
     return 0;
 }
 
+int verifyLabel(char *label)
+{
+    // Verifica se label é NULL ou vazia
+    if (label == NULL || label == '\0')
+    {
+        return 0; // Inválida
+    }
+
+    // Verifica primeiro caractere
+    char first = label[0];
+    if ((first < 'a' || first > 'z') &&
+        (first < 'A' || first > 'Z') &&
+        first != '_')
+    {
+        return 0; // Inválida - não começa com letra ou underscore
+    }
+
+    // Verifica resto dos caracteres
+    for (int i = 1; label[i] != '\0'; i++)
+    {
+        char c = label[i];
+        if ((c < 'a' || c > 'z') &&
+            (c < 'A' || c > 'Z') &&
+            (c < '0' || c > '9') &&
+            c != '_')
+        {
+            return 0; // Inválida - contém caractere especial
+        }
+    }
+
+    return 1; // Válida
+}
+
+int verifyQuantLabelAtLine(char *line)
+{
+    // Verifica se line é NULL
+    if (line == NULL)
+    {
+        return 1; // Válido
+    }
+
+    int colonCount = 0;
+    int inString = 0; // Flag para rastrear se está dentro de string
+
+    // Percorre a linha
+    for (int i = 0; line[i] != '\0'; i++)
+    {
+        // Ignora caracteres dentro de strings (entre aspas)
+        if (line[i] == '"' && (i == 0 || line[i - 1] != '\\'))
+        {
+            inString = !inString;
+            continue;
+        }
+
+        // Se encontrar comentário (';'), para de verificar
+        if (line[i] == ';' && !inString)
+        {
+            break;
+        }
+
+        // Conta ':' fora de strings e comentários
+        if (line[i] == ':' && !inString)
+        {
+            colonCount++;
+        }
+    }
+
+    // Se houver 2 ou mais ':', há múltiplos rótulos
+    if (colonCount >= 2)
+    {
+        return 0; // Inválido
+    }
+
+    return 1; // Válido
+}
+
 void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO2)
 {
     char linha[1024];   // buffer para a linha lida
@@ -491,13 +567,19 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     int qtd_simbolos = 0;
     Mnemonic mnemonicTable[MAX_MNEMONIC];
     int qtd_mnemonicos = loadMnemonics("upcode.txt", mnemonicTable, MAX_MNEMONIC);
+    int current_line = 0;
 
     // Ler o arquivo de entrada linha por linha
     while (fgets(linha, sizeof(linha), arquivoEntrada) != NULL)
     {
         current_line++;
-        // printf("%s", linha);
-        //  Obter tokens da linha, usando separador
+
+        if (!verifyQuantLabelAtLine(linha))
+        {
+            printf("(%d) ERRO SINTATICO: multiplos rotulos na linha: %s\n", current_line, linha);
+            continue;
+        }
+
         word_count = separador(linha, tokens);
 
         char *label = NULL;
@@ -514,6 +596,13 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 // Remove ':' do label
                 tokens[0][len - 1] = '\0';
                 label = tokens[0];
+
+                if (!verifyLabel(label))
+                {
+                    printf("(%d) ERRO LEXICO: %s\n", current_line, label);
+                    continue;
+                }
+
                 if (word_count > 1)
                 {
                     opr = tokens[1];
