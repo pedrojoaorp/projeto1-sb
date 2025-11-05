@@ -8,7 +8,7 @@
 #define UPCODEFILE "upcode.txt"
 #define MAX_TAMANHO_SIMBOLO 50
 #define MAX_TAMANHO_MNEMONIC 50
-#define MAX_PENDENCIAS 50
+#define MAX_PENDENCIAS 128
 #define MAX_CODIGO_OBJ 128
 #define MAX_ARGS_OPR 2
 #define BUFFER_SIZE 1024
@@ -547,7 +547,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 }
                 else
                 {
-                    insertSimboloTabela(tabelaSimbolos, &(codigo.tamanho), MAX_QTD_SIMBOLOS, label, (codigo.tamanho), 1);
+                    insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, label, (codigo.tamanho), 1);
                 }
             }
             if (opr)
@@ -618,8 +618,10 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                             insertInCodigoObj(&codigo, tabelaSimbolos[arg1InTS].valor);
                         }
                     }
-                    if (arg2 && arg2[0] != '\0')
+                    if (arg2)
                     {
+                        printf("|%s|--", arg2);
+                        printf("%d (opr == 'COPY') -- |%s|\n", (strcmp(opr, "COPY") == 0), linha);
                         int arg2InTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, arg2);
                         if (arg2InTS == -1)
                         {
@@ -627,7 +629,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                             insertPendenciaAtSimbolo(&tabelaSimbolos[novo_simb], (codigo.tamanho));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
                         }
-                        else if (tabelaSimbolos[arg2InTS].def)
+                        else if (tabelaSimbolos[arg2InTS].def == 0)
                         {
                             insertPendenciaAtSimbolo(&tabelaSimbolos[arg2InTS], (codigo.tamanho));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
