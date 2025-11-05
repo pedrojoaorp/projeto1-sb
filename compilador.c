@@ -651,6 +651,15 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
         }
     }
 
+    for (size_t i = 0; i < qtd_simbolos; i++)
+    {
+        if (tabelaSimbolos[i].def == 0)
+        {
+            printf("Rótulo [%s] não declarado", tabelaSimbolos[i].simbolo);  // ERRO: rotulo não declarado
+        }
+    }
+    
+
     char *codObjString = CodigoObjToString(&codigo, codigo.tamanho);
     char *list = printListaPendencias(tabelaSimbolos, tabelaSimbolos->num_pendencias);
     printf("codigo objeto o1: %s\n", codObjString);
