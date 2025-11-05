@@ -559,6 +559,11 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 {
                     printf("|%s|--", opr);
                     printf("%d (opr == 'SPACE')\n", (strcmp(opr, "SPACE") == 0));
+                    if (arg2)
+                    {
+                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                    }
+                    
                     if (!label)
                     {
                         // ERRO, SEM LABEL
@@ -584,6 +589,11 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 {
                     printf("|%s|--", opr);
                     printf("%d (opr == 'CONST')\n", (strcmp(opr, "CONST") == 0));
+                    if (arg2)
+                    {
+                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                    }
+                    
                     if (!label)
                     {
                         // ERRO, SEM LABEL
@@ -594,7 +604,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     else
                     {
-                        // ERRO, ARG FALTANDO
+                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]", opr, current_line);  // ERRO: instrução com número de parâmetros errado
                     }
                 }
                 else
@@ -604,6 +614,21 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     {
                         printf("-- ERRO: instrução na linha [%d] [%s] é inválida", current_line, opr);
                     }
+
+                    int arg_count = 0;
+                    if (arg1)
+                    {
+                        arg_count++;
+                    }
+                    if (arg2)
+                    {
+                        arg_count++;
+                    }
+                    if (mnemonicTable[opcode].quantArgs != arg_count)
+                    {
+                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                    }
+                    
                     
                     insertInCodigoObj(&codigo, opcode);
                     if (arg1)
