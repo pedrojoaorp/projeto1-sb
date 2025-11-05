@@ -1,11 +1,14 @@
 12 0 12 0 10 0 1 0 11 0 13 0 14 0 0 0
 LISTA DE PENDENCIAS:
 Simb: N1
-Valor: 0
-Def: 0
- Simb: N2
-Valor: 0
-Def: 0
- Simb: N3
-Valor: 0
-Def: 0
+Valor: 13
+Def: 1
+Pendencias: 1 5 
+Simb: N2
+Valor: 14
+Def: 1
+Pendencias: 3 7 
+Simb: N3
+Valor: 15
+Def: 1
+Pendencias: 9 11 

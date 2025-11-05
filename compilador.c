@@ -8,7 +8,7 @@
 #define UPCODEFILE "upcode.txt"
 #define MAX_TAMANHO_SIMBOLO 50
 #define MAX_TAMANHO_MNEMONIC 50
-#define MAX_PENDENCIAS 50
+#define MAX_PENDENCIAS 128
 #define MAX_CODIGO_OBJ 128
 #define MAX_ARGS_OPR 2
 #define BUFFER_SIZE 1024
@@ -113,46 +113,28 @@ char *printCodObj(CodigoObj *codigo)
 
 char *printListaPendencias(TabelaSimbolo *table, int maxLines)
 {
-    // Buffer para armazenar a string final
     static char list[BUFFER_SIZE];
-    list[0] = '\0'; // Limpa o buffer
+    list[0] = '\0';
 
-    char temp[32];
-    snprintf(temp, sizeof(temp), "LISTA DE PENDENCIAS:\n");
-    strcat(list, temp);
+    strcat(list, "LISTA DE PENDENCIAS:\n");
 
     for (int l = 0; l < maxLines; l++)
     {
-        snprintf(temp, sizeof(temp), "Simb: %s\nValor: %d\nDef: %d\n", table[l].simbolo, table[l].valor, table[l].def);
+        char temp[256];
+        snprintf(temp, sizeof(temp), "Simb: %s\nValor: %d\nDef: %d\n",
+                 table[l].simbolo, table[l].valor, table[l].def);
         strcat(list, temp);
 
-        // Buffer para armazenar a string da lista desse simbolo em especifico
-        static char valuesList[MAX_PENDENCIAS];
-        valuesList[0] = '\0'; // Limpa o buffer
-        char tempValues[32];
+        strcat(list, "Pendencias: ");
 
-        snprintf(tempValues, sizeof(tempValues), "Pendencias: ");
-        strcat(valuesList, tempValues);
-
-        for (int p = 0; p < MAX_PENDENCIAS; p++)
+        // Itera apenas até num_pendencias, não MAX_PENDENCIAS
+        for (int p = 0; p < table[l].num_pendencias; p++)
         {
-            snprintf(tempValues, sizeof(tempValues), "%d ", table[l].pendencias[p]);
-            strcat(valuesList, tempValues);
+            snprintf(temp, sizeof(temp), "%d ", table[l].pendencias[p]);
+            strcat(list, temp);
         }
 
-        // Remove espaço extra final, se existir
-        int len = strlen(valuesList);
-        valuesList[len - 1] = '\n';
-
-        snprintf(temp, sizeof(temp), "%c", valuesList);
-        strcat(list, temp);
-    }
-
-    // Remove espaço extra final, se existir
-    int len = strlen(list);
-    if (len > 0 && list[len - 1] == ' ')
-    {
-        list[len - 1] = '\0';
+        strcat(list, "\n");
     }
 
     return list;
@@ -187,7 +169,9 @@ int insertSimboloTabela(TabelaSimbolo tabela[], int *n, int maxTable, const char
 int insertPendenciaAtSimbolo(TabelaSimbolo *simbolo, int desloc)
 {
     if (simbolo->num_pendencias >= MAX_PENDENCIAS)
+    {
         return 0; // Lista cheia
+    }
     simbolo->pendencias[simbolo->num_pendencias] = desloc;
     simbolo->num_pendencias++;
     return 1; // Sucesso
@@ -551,17 +535,28 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 int labelInTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, label);
                 if (labelInTS != -1)
                 {
-                    // ERRO, REDEFINICAO DE ROTULO
+                    if (tabelaSimbolos[labelInTS].def == 0)
+                    {
+                        tabelaSimbolos[labelInTS].def = 1;
+                        tabelaSimbolos[labelInTS].valor = (codigo.tamanho);
+                    }
+                    else
+                    {
+                        // ERRO, REDEFINICAO DE ROTULO
+                    }
                 }
                 else
                 {
-                    insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, label, (codigo.tamanho + 1), 1);
+                    insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, label, (codigo.tamanho), 1);
                 }
             }
             if (opr)
             {
-                if (opr == "SPACE")
+
+                if (strcmp(opr, "SPACE") == 0)
                 {
+                    printf("|%s|--", opr);
+                    printf("%d (opr == 'SPACE')\n", (strcmp(opr, "SPACE") == 0));
                     if (!label)
                     {
                         // ERRO, SEM LABEL
@@ -569,6 +564,10 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     if (arg1)
                     {
                         int arg = atoi(arg1);
+                        if (arg <= 0)
+                        {
+                            // ERRO: SPACE requer número > 0
+                        }
                         for (size_t i = 0; i < arg; i++)
                         {
                             insertInCodigoObj(&codigo, 0);
@@ -576,11 +575,13 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     else
                     {
-                        insertInCodigoObj(&codigo, 0);
+                        insertInCodigoObj(&codigo, 0); // Padrão: 1 palavra
                     }
                 }
-                else if (opr == "CONST")
+                else if ((strcmp(opr, "CONST") == 0))
                 {
+                    printf("|%s|--", opr);
+                    printf("%d (opr == 'CONST')\n", (strcmp(opr, "CONST") == 0));
                     if (!label)
                     {
                         // ERRO, SEM LABEL
@@ -604,12 +605,12 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                         if (arg1InTS == -1)
                         {
                             int novo_simb = insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, arg1, 0, 0);
-                            insertPendenciaAtSimbolo(&tabelaSimbolos[novo_simb], (codigo.tamanho + 1));
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[novo_simb], (codigo.tamanho));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
                         }
-                        else if (tabelaSimbolos[arg1InTS].def)
+                        else if (tabelaSimbolos[arg1InTS].def == 0)
                         {
-                            insertPendenciaAtSimbolo(&tabelaSimbolos[arg1InTS], (codigo.tamanho + 1));
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[arg1InTS], (codigo.tamanho));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
                         }
                         else
@@ -619,16 +620,18 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     if (arg2)
                     {
+                        printf("|%s|--", arg2);
+                        printf("%d (opr == 'COPY') -- |%s|\n", (strcmp(opr, "COPY") == 0), linha);
                         int arg2InTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, arg2);
                         if (arg2InTS == -1)
                         {
                             int novo_simb = insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, arg2, 0, 0);
-                            insertPendenciaAtSimbolo(&tabelaSimbolos[novo_simb], (codigo.tamanho + 1));
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[novo_simb], (codigo.tamanho));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
                         }
-                        else if (tabelaSimbolos[arg2InTS].def)
+                        else if (tabelaSimbolos[arg2InTS].def == 0)
                         {
-                            insertPendenciaAtSimbolo(&tabelaSimbolos[arg2InTS], (codigo.tamanho + 1));
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[arg2InTS], (codigo.tamanho));
                             insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
                         }
                         else
