@@ -130,11 +130,16 @@ char *printListaPendencias(TabelaSimbolo *table, int maxLines)
         // Itera apenas até num_pendencias, não MAX_PENDENCIAS
         for (int p = 0; p < table[l].num_pendencias; p++)
         {
-            snprintf(temp, sizeof(temp), "%d ", table[l].pendencias[p]);
+            snprintf(temp, sizeof(temp), "%d", table[l].pendencias[p]);
             strcat(list, temp);
+            if (p != table[l].num_pendencias-1)
+            {
+                strcat(list, ", ");
+            }
+            
         }
 
-        strcat(list, "\n");
+        strcat(list, "\n\n");
     }
 
     return list;
@@ -450,15 +455,15 @@ int makeO1(TabelaSimbolo *ts, int maxTs, CodigoObj *codObj, int maxCodObj, FILE 
     int a = writeCodObjOnFile(codObjString, arquivoSaidaO1, 1);
     int b = writePendenciasOnFile(listaPendenciasString, arquivoSaidaO1, 2);
 
-    if (a || b)
-    {
-        free(codObjString);
-        free(listaPendenciasString);
-        return 1;
-    }
+    // if (a || b)
+    // {
+    //     free(codObjString);
+    //     free(listaPendenciasString);
+    //     return 1;
+    // }
 
-    free(codObjString);
-    free(listaPendenciasString);
+    // free(codObjString);
+    // free(listaPendenciasString);
     return 0;
 }
 
@@ -645,8 +650,6 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
 
                 if (strcmp(opr, "SPACE") == 0)
                 {
-                    printf("|%s|--", opr);
-                    printf("%d (opr == 'SPACE')\n", (strcmp(opr, "SPACE") == 0));
                     if (arg2)
                     {
                         printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
@@ -675,8 +678,6 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 }
                 else if ((strcmp(opr, "CONST") == 0))
                 {
-                    printf("|%s|--", opr);
-                    printf("%d (opr == 'CONST')\n", (strcmp(opr, "CONST") == 0));
                     if (arg2)
                     {
                         printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
@@ -745,8 +746,6 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     if (arg2)
                     {
-                        printf("|%s|--", arg2);
-                        printf("%d (opr == 'COPY') -- |%s|\n", (strcmp(opr, "COPY") == 0), linha);
                         int arg2InTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, arg2);
                         if (arg2InTS == -1)
                         {
@@ -785,16 +784,12 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
 
     char *codObjString = CodigoObjToString(&codigo, codigo.tamanho);
     char *list = printListaPendencias(tabelaSimbolos, tabelaSimbolos->num_pendencias);
-    printf("codigo objeto o1: %s\n", codObjString);
-    printf("%s\n", list);
 
     // funcao de montagem do o1
     int hasWritedO1 = makeO1(tabelaSimbolos, qtd_simbolos, &codigo, codigo.tamanho, arquivoSaidaO1);
-    fclose(arquivoSaidaO1);
 
     // funcao de montagem do o2
     int hasWritedO2 = makeO2(tabelaSimbolos, qtd_simbolos, &codigo, codigo.tamanho, arquivoSaidaO2);
-    fclose(arquivoSaidaO2);
 }
 
 int main(int argc, char *argv[])
@@ -874,122 +869,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-/*
-
-
-
-*/
-
-/*
-if (label)
-{
-    add label to TS, like this:
-    try to find label in TS
-    if failed:
-    insertSimboloTabela(tabela, n?(perguntar o que é), maxTable, label, CodigoObj.tamanho+1, 1) PERGUNTAR SOBRE IMPLEMENTACAO EXATA DA FUNCAO; PODE DAR ERRO TENTAR ACESSAR O CODIGOOBJ AQUI
-    if succeeded:
-        ERRO, ROTULO JA DEFINIDO
-}
-if (opr)
-{
-    if (opr == SPACE)
-    {
-        if (!label)
-        {
-            ERRO, SEM LABEL
-        }
-        if (arg1)
-        {
-            transform arg1 to int
-            for (i = 0, i < arg1, i++)
-            {
-                insertInCodigoObj(0)
-            }
-        } else
-        {
-            insertInCodigoObj(0)
-        }
-    } else if (opr == CONST)
-    {
-        if (!label)
-        {
-            ERRO, SEM LABEL
-        }
-        if (arg1)
-        {
-            insertInCodigoObj(arg1)
-        } else
-        {
-            ERRO, ARG FALTANDO
-        }
-    } else
-    {
-        turn opr String to Opcode using Mnemonics table
-        insertInCodigoObj(opcode)
-        if (arg1)
-        {
-            read arg1's label
-            try to find arg1's label from TS
-            if doesn't exist:
-            add to TS, start Lista de pendencias with current address, insertInCodigoObj(either 0 or the number added to the label), like this:
-            insertSimboloTabela(tabela, n???, maxTable, arg1, 0 [valor temp], 0)
-            insertPendenciaAtSimbolo(numero do simbolo que acabamos de criar, endereco atual)
-            insertInCodigoObj(0)
-            else if exists but is not defined:
-            add current address to Lista de pendencias, insertInCodigoObj(either 0 or the number added to the label), like this:
-            insertPendenciaAtSimbolo(numero do simbolo, endereco atual)
-            insertInCodigoObj(0)
-            else if exists and is defined:
-            get label address and insertInCodigoObj(address)
-
-        }
-    }
-    for (size_t i = 0; i < qtd_simbolos; i++)
-    {
-        TabelaSimbolo linhaTab = tabelaSimbolos[i];
-        if (linhaTab.def == 0)
-        {
-            for (size_t j = 0; j < linhaTab.num_pendencias; j++)
-            {
-                addToAddressInCodigoObj(&codigo, j, linhaTab.valor);
-            }
-        }
-    }
-
-    /*
-    Logica de resolucao da lista de pendencias
-    for i in range(qtd_simbolos):
-    linha = tabelaSimbolos[i]
-    if linha.def == 0:
-    for j in linha.pendencias:
-    addToAddressInCodigoObj(codigo, j, linha.valor)
-    */
-
-/*
-
-int main()
-{
-   TabelaSimbolo simbolos[6] = {
-       {"INICIO", 40, 1, {2, 8}, 2},  // resolve memória[2] e memória[8] com valor 40
-       {"CONST1", 99, 1, {6, 10}, 2}, // resolve memória[6] e memória[10] com 99
-       {"MID", 55, 1, {3}, 1},        // resolve memória[3] com 55
-       {"VAR", -1, 0, {1, 7}, 2},     // NÃO resolve nada (indefinido)
-       {"FINAL", 77, 1, {11}, 1},     // resolve memória[11] com 77
-       {"AUX", 12, 1, {0, 9}, 2}      // resolve memória[0] e memória[9] com 12
-   };
-   CodigoObj obj = {.memoria = {0, 0, 0, 0, 24, 36, 0, 0, 0, 0, 0, 0}, .tamanho = 12};
-
-   // Crie um arquivo de saída
-   FILE *fout = fopen("saida.txt", "w");
-   if (!fout)
-   {
-       printf("Erro ao abrir arquivo de saída!\n");
-       return 1;
-   }
-
-   // Chame a função de "montagem"
-   int resultado = makeO2(simbolos, 6, &obj, 12, fout);
-   fclose(fout);
-   return 0;
-}
-*/
