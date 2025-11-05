@@ -544,7 +544,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     else
                     {
-                        printf("Rótulo [%s] sendo declarado novamente na linha [%d]", label, current_line);  // ERRO: rotulo declarado duas vezes em lugares diferentes
+                        printf("-- ERRO: Rótulo [%s] sendo declarado novamente na linha [%d]", label, current_line);  // ERRO: rotulo declarado duas vezes em lugares diferentes
                     }
                 }
                 else
@@ -600,6 +600,11 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 else
                 {
                     int opcode = mnemonicTable[findMnemonic(opr, mnemonicTable, qtd_mnemonicos)].opcode;
+                    if (opcode == -1)
+                    {
+                        printf("-- ERRO: instrução na linha [%d] [%s] é inválida", current_line, opr);
+                    }
+                    
                     insertInCodigoObj(&codigo, opcode);
                     if (arg1)
                     {
@@ -655,7 +660,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     {
         if (tabelaSimbolos[i].def == 0)
         {
-            printf("Rótulo [%s] não declarado", tabelaSimbolos[i].simbolo);  // ERRO: rotulo não declarado
+            printf("-- ERRO: Rótulo [%s] não declarado", tabelaSimbolos[i].simbolo);  // ERRO: rotulo não declarado
         }
     }
     
