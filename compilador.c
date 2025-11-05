@@ -484,6 +484,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     char linha[1024];   // buffer para a linha lida
     char *tokens[1024]; // array para armazenar os tokens da linha
     int word_count;
+    int current_line = 0;
 
     CodigoObj codigo;
     TabelaSimbolo tabelaSimbolos[MAX_QTD_SIMBOLOS];
@@ -494,6 +495,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     // Ler o arquivo de entrada linha por linha
     while (fgets(linha, sizeof(linha), arquivoEntrada) != NULL)
     {
+        current_line++;
         // printf("%s", linha);
         //  Obter tokens da linha, usando separador
         word_count = separador(linha, tokens);
