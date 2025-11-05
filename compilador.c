@@ -566,7 +566,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     
                     if (!label)
                     {
-                        // ERRO, SEM LABEL
+                        printf("-- ERRO: [%s] na linha [%d] não tem rótulo sendo declarado", opr, current_line);
                     }
                     if (arg1)
                     {
@@ -593,10 +593,10 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     {
                         printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]", opr, current_line);  // ERRO: instrução com número de parâmetros errado
                     }
-                    
+
                     if (!label)
                     {
-                        // ERRO, SEM LABEL
+                        printf("-- ERRO: [%s] na linha [%d] não tem rótulo sendo declarado", opr, current_line);
                     }
                     if (arg1)
                     {
