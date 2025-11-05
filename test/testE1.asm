@@ -4,7 +4,7 @@ FAT: SUB ONE
     JMPZ FIM 
     STORE AUX 
     MULT N 
-    STORE N 
+FIM: STORE N ;rotulo declarado duas vezes
     LOAD AUX 
     JMP FAT 
 FIM: OUTPUT N 

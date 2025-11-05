@@ -7,7 +7,7 @@ FAT: SUB ONE
     STORE N 
     LOAD AUX 
     JMP FAT 
-FIM: OUTPUT N 
+FIM: OUTPUT N 5 ;instrução com número de parâmetros errado
     STOP
 AUX: SPACE 3
 N: SPACE

@@ -7,7 +7,7 @@ FAT: SUB ONE
     STORE N 
     LOAD AUX 
     JMP FAT 
-FIM: OUTPUT N 
+FIM: FIM: OUTPUT N ;dois rotulos na mesma linha
     STOP
 AUX: SPACE 3
 N: SPACE

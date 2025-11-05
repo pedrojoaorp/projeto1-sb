@@ -7,7 +7,7 @@ FAT: SUB ONE
     STORE N 
     LOAD AUX 
     JMP FAT 
-FIM: OUTPUT N 
+FIM: Print N ;instrução inexistente
     STOP
 AUX: SPACE 3
 N: SPACE

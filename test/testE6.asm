@@ -7,7 +7,7 @@ FAT: SUB ONE
     STORE N 
     LOAD AUX 
     JMP FAT 
-FIM: OUTPUT N 
+100FIM: OUTPUT N ;erro léxico
     STOP
 AUX: SPACE 3
 N: SPACE
