@@ -132,11 +132,10 @@ char *printListaPendencias(TabelaSimbolo *table, int maxLines)
         {
             snprintf(temp, sizeof(temp), "%d", table[l].pendencias[p]);
             strcat(list, temp);
-            if (p != table[l].num_pendencias-1)
+            if (p != table[l].num_pendencias - 1)
             {
                 strcat(list, ", ");
             }
-            
         }
 
         strcat(list, "\n\n");
@@ -559,7 +558,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
 
         if (!verifyQuantLabelAtLine(linha))
         {
-            printf("-- ERRO: Múltiplos rótulos na linha [%d]: [%s]\n", current_line, linha);
+            printf("-- ERRO: Multiplos rotulos na linha [%d]: [%s]\n", current_line, linha);
             continue;
         }
 
@@ -582,7 +581,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
 
                 if (!verifyLabel(label))
                 {
-                    printf("-- ERRO: Erro léxico na linha [%d]: [%s]", current_line, label);
+                    printf("-- ERRO: Erro lexico na linha [%d]: [%s]\n", current_line, label);
                     continue;
                 }
 
@@ -616,7 +615,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     else
                     {
-                        printf("-- ERRO: Rótulo [%s] sendo declarado novamente na linha [%d]\n", label, current_line);  // ERRO: rotulo declarado duas vezes em lugares diferentes
+                        printf("-- ERRO: Rotulo [%s] sendo declarado novamente na linha [%d]\n", label, current_line); // ERRO: rotulo declarado duas vezes em lugares diferentes
                     }
                 }
                 else
@@ -631,12 +630,12 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 {
                     if (arg2)
                     {
-                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                        printf("-- ERRO: Quantidade de argumentos invalida para instrucao [%s] na linha [%d]\n", opr, current_line); // ERRO: instrução com número de parâmetros errado
                     }
-                    
+
                     if (!label)
                     {
-                        printf("-- ERRO: [%s] na linha [%d] não tem rótulo sendo declarado\n", opr, current_line);
+                        printf("-- ERRO: [%s] na linha [%d] nao tem rotulo sendo declarado\n", opr, current_line);
                     }
                     if (arg1)
                     {
@@ -659,12 +658,12 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 {
                     if (arg2)
                     {
-                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                        printf("-- ERRO: Quantidade de argumentos invalida para instrucao [%s] na linha [%d]\n", opr, current_line); // ERRO: instrução com número de parâmetros errado
                     }
 
                     if (!label)
                     {
-                        printf("-- ERRO: [%s] na linha [%d] não tem rótulo sendo declarado\n", opr, current_line);
+                        printf("-- ERRO: [%s] na linha [%d] nao tem rotulo sendo declarado\n", opr, current_line);
                     }
                     if (arg1)
                     {
@@ -672,7 +671,7 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     else
                     {
-                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                        printf("-- ERRO: Quantidade de argumentos invalida para instrucao [%s] na linha [%d]\n", opr, current_line); // ERRO: instrução com número de parâmetros errado
                     }
                 }
                 else
@@ -682,9 +681,10 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     if (opcode_index != -1)
                     {
                         opcode = mnemonicTable[opcode_index].opcode;
-                    } else
+                    }
+                    else
                     {
-                        printf("-- ERRO: Instrução na linha [%d] [%s] é inválida\n", current_line, opr);
+                        printf("-- ERRO: Instrucao na linha [%d] [%s] eh invalida\n", current_line, opr);
                         opcode = -1;
                     }
 
@@ -699,10 +699,9 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                     }
                     if (mnemonicTable[opcode_index].quantArgs != arg_count)
                     {
-                        printf("-- ERRO: Quantidade de argumentos inválida para instrução [%s] na linha [%d]\n", opr, current_line);  // ERRO: instrução com número de parâmetros errado
+                        printf("-- ERRO: Quantidade de argumentos invalida para instrucao [%s] na linha [%d]\n", opr, current_line); // ERRO: instrução com número de parâmetros errado
                     }
-                    
-                    
+
                     insertInCodigoObj(&codigo, opcode);
                     if (arg1)
                     {
@@ -756,10 +755,9 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     {
         if (tabelaSimbolos[i].def == 0)
         {
-            printf("-- ERRO: Rótulo [%s] não declarado\n", tabelaSimbolos[i].simbolo);  // ERRO: rotulo não declarado
+            printf("-- ERRO: Rotulo [%s] nao declarado\n", tabelaSimbolos[i].simbolo); // ERRO: rotulo não declarado
         }
     }
-    
 
     char *codObjString = CodigoObjToString(&codigo, codigo.tamanho);
     char *list = printListaPendencias(tabelaSimbolos, tabelaSimbolos->num_pendencias);
