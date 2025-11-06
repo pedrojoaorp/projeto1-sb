@@ -1075,7 +1075,7 @@ int makeO2(TabelaSimbolo *ts, int maxTs, CodigoObj *codObj, int maxCodObj, FILE 
 int verifyLabel(char *label)
 {
     // Verifica se label é NULL ou vazia
-    if (label == NULL || label == '\0')
+    if (label == NULL || label[0] == '\0')
     {
         return 0; // Inválida
     }
