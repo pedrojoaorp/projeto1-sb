@@ -1,9 +1,0 @@
-PROGRAMA: INPUT BASE
-          INPUT ALTURA
-          LOAD BASE
-          MUL ALTURA
-          STORE BASE
-          OUTPUT BASE
-          STOP
-BASE: SPACE
-ALTURA: SPACE
