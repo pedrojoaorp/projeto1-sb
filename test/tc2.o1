@@ -1,0 +1,42 @@
+9 0 0 9 0 0 12 0 13 0 10 0 1 0 11 0 2 0 7 0 13 0 9 0 0 9 0 0 5 10 13 0 14 0 1 0 0 0 0
+LISTA DE PENDENCIAS:
+Simb: ZERO
+Valor: 33
+Def: 1
+Pendencias: 1
+
+Simb: OLDER
+Valor: 35
+Def: 1
+Pendencias: 2, 11, 24
+
+Simb: ONE
+Valor: 34
+Def: 1
+Pendencias: 4
+
+Simb: OLD
+Valor: 36
+Def: 1
+Pendencias: 5, 9, 13, 23, 27
+
+Simb: LIMIT
+Valor: 38
+Def: 1
+Pendencias: 7, 17, 31
+
+Simb: FRONT
+Valor: 10
+Def: 1
+Pendencias: 
+
+Simb: NEW
+Valor: 37
+Def: 1
+Pendencias: 15, 21, 26
+
+Simb: FINAL
+Valor: 30
+Def: 1
+Pendencias: 19
+

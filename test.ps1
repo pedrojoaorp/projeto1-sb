@@ -14,7 +14,7 @@ if (-not (Test-Path $ExpectedFile)) {
 
 # Executa o compiladpr
 Write-Host "Executando preprocessador..."
-.\compilador.exe $AsmFile
+.\comp2.exe $AsmFile
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Erro na execucao do compilador" -ForegroundColor Red
     exit $LASTEXITCODE

@@ -10,23 +10,26 @@
 #define MAX_MACROS 2
 #define MAX_MACRO_LINES 100
 #define MAX_LINE_SIZE 512
+
 #define MAX_LINHA 1024        // Para buffer de linha
 #define MAX_NOME_ARQUIVO 1024 // Para nomes de arquivo
 #define MAX_MNEMONIC 32
 #define UPCODEFILE "upcode.txt"
 #define MAX_TAMANHO_SIMBOLO 50
 #define MAX_TAMANHO_MNEMONIC 50
-#define MAX_PENDENCIAS 50
+#define MAX_PENDENCIAS 128
 #define MAX_CODIGO_OBJ 128
 #define MAX_ARGS_OPR 2
 #define BUFFER_SIZE 1024
 #define MAX_TAMANHO_MEMORIA 1024
+#define MAX_QTD_SIMBOLOS 1024
 
 typedef struct
 {
     char mnemonic[MAX_TAMANHO_MNEMONIC]; // Nome do símbolo, ex: "ADD"
     int opcode;                          // Código numérico, ex: 1
     int size;                            // Tamanho em palavras, ex: 2
+    int quantArgs;
 } Mnemonic;
 
 typedef struct
@@ -642,7 +645,7 @@ int preprocess(char *input_filename, char *output_filename)
     fclose(output);
 
     printf("Pre-processamento concluido. %d macros processadas.\n", table.macro_count);
-    return 0;
+    return 1;
 }
 
 int insertInCodigoObj(CodigoObj *codigo, int dado)
@@ -675,6 +678,16 @@ int updateByAddressInCodigoObj(CodigoObj *codigo, int endereco, int novo_dado)
     velho_dado = codigo->memoria[endereco];
     codigo->memoria[endereco] = novo_dado;
     return velho_dado;
+}
+
+int addToAddressInCodigoObj(CodigoObj *codigo, int endereco, int novo_dado)
+{
+    if (endereco >= codigo->tamanho)
+    {
+        return -1; // Não encontrado
+    }
+    codigo->memoria[endereco] += novo_dado;
+    return codigo->memoria[endereco];
 }
 
 char *printCodObj(CodigoObj *codigo)
@@ -710,46 +723,32 @@ char *printCodObj(CodigoObj *codigo)
 
 char *printListaPendencias(TabelaSimbolo *table, int maxLines)
 {
-    // Buffer para armazenar a string final
     static char list[BUFFER_SIZE];
-    list[0] = '\0'; // Limpa o buffer
+    list[0] = '\0';
 
-    char temp[32];
-    snprintf(temp, sizeof(temp), "LISTA DE PENDENCIAS:\n");
-    strcat(list, temp);
+    strcat(list, "LISTA DE PENDENCIAS:\n");
 
     for (int l = 0; l < maxLines; l++)
     {
-        snprintf(temp, sizeof(temp), "Simb: %s\nValor: %d\nDef: %d\n", table[l].simbolo, table[l].valor, table[l].def);
+        char temp[256];
+        snprintf(temp, sizeof(temp), "Simb: %s\nValor: %d\nDef: %d\n",
+                 table[l].simbolo, table[l].valor, table[l].def);
         strcat(list, temp);
 
-        // Buffer para armazenar a string da lista desse simbolo em especifico
-        static char valuesList[MAX_PENDENCIAS];
-        valuesList[0] = '\0'; // Limpa o buffer
-        char tempValues[32];
+        strcat(list, "Pendencias: ");
 
-        snprintf(tempValues, sizeof(tempValues), "Pendencias: ");
-        strcat(valuesList, tempValues);
-
-        for (int p = 0; p < MAX_PENDENCIAS; p++)
+        // Itera apenas até num_pendencias, não MAX_PENDENCIAS
+        for (int p = 0; p < table[l].num_pendencias; p++)
         {
-            snprintf(tempValues, sizeof(tempValues), "%d ", table[l].pendencias[p]);
-            strcat(valuesList, tempValues);
+            snprintf(temp, sizeof(temp), "%d", table[l].pendencias[p]);
+            strcat(list, temp);
+            if (p != table[l].num_pendencias - 1)
+            {
+                strcat(list, ", ");
+            }
         }
 
-        // Remove espaço extra final, se existir
-        int len = strlen(valuesList);
-        valuesList[len - 1] = '\n';
-
-        snprintf(temp, sizeof(temp), "%c", valuesList);
-        strcat(list, temp);
-    }
-
-    // Remove espaço extra final, se existir
-    int len = strlen(list);
-    if (len > 0 && list[len - 1] == ' ')
-    {
-        list[len - 1] = '\0';
+        strcat(list, "\n\n");
     }
 
     return list;
@@ -778,13 +777,15 @@ int insertSimboloTabela(TabelaSimbolo tabela[], int *n, int maxTable, const char
     tabela[*n].def = def;
     tabela[*n].num_pendencias = 0;
     (*n)++;
-    return 1; // Sucesso
+    return ((*n) - 1); // Sucesso, retorna o ponteiro para o símbolo recém criado
 }
 
 int insertPendenciaAtSimbolo(TabelaSimbolo *simbolo, int desloc)
 {
     if (simbolo->num_pendencias >= MAX_PENDENCIAS)
+    {
         return 0; // Lista cheia
+    }
     simbolo->pendencias[simbolo->num_pendencias] = desloc;
     simbolo->num_pendencias++;
     return 1; // Sucesso
@@ -801,13 +802,14 @@ int loadMnemonics(const char *filename, Mnemonic *table, int max_size)
     while (fgets(line, sizeof(line), f) && count < max_size)
     {
         char mnemonic[8];
-        int opcode, size;
-        // Lê formato: ADD,01,2
-        if (sscanf(line, "%7[^,],%d,%d", mnemonic, &opcode, &size) == 3)
+        int opcode, size, quantArgs;
+        // Lê formato: ADD,01,2,1
+        if (sscanf(line, "%7[^,],%d,%d,%d", mnemonic, &opcode, &size, &quantArgs) == 4)
         {
             strcpy(table[count].mnemonic, mnemonic);
             table[count].opcode = opcode;
             table[count].size = size;
+            table[count].quantArgs = quantArgs;
             count++;
         }
     }
@@ -887,16 +889,264 @@ int separador(char *str_original, char *words[1024])
     return word_count;
 }
 
-// código de teste da funcionalidade da função
-// for (int i = 0; i < word_count; i++)
-// {
-//     long tamanho = words[i + 1] - words[i];
-//     printf("Palavra encontrada: '");
-//     for (long j = 0; words[i][j] != '\0'; j++)
-//     {
-//         putchar(words[i][j]);
-//     }
-//     printf("'\n");
+int writeCodObjOnFile(char *codObj, FILE *file, int lineToWrite)
+{
+    if (!codObj || !file || lineToWrite < 1)
+        return 0;
+
+    // Reposiciona para o início do arquivo
+    rewind(file);
+
+    char buffer[1024];
+    int currentLine = 1;
+
+    // Percorre até a linha anterior à desejada
+    while (currentLine < lineToWrite && fgets(buffer, sizeof(buffer), file) != NULL)
+    {
+        currentLine++;
+    }
+
+    long pos = ftell(file);
+
+    if (currentLine == lineToWrite)
+    {
+        // Move para a posição do início da linha que queremos sobrescrever
+        fseek(file, pos, SEEK_SET);
+
+        // Escreve a string na linha, seguida de nova linha
+        fprintf(file, "%s\n", codObj);
+
+        return 1;
+    }
+    else if (currentLine < lineToWrite)
+    {
+        // A linha desejada ainda não existe; adicionar novas linhas em branco até chegar nela
+        // Posiciona no fim do arquivo
+        fseek(file, 0, SEEK_END);
+
+        while (currentLine < lineToWrite)
+        {
+            fprintf(file, "\n");
+            currentLine++;
+        }
+
+        fprintf(file, "%s\n", codObj);
+        return 1;
+    }
+
+    return 0; // Linha inválida ou erro
+}
+
+char *CodigoObjToString(CodigoObj *codObj, int maxCodObj)
+{
+    if (!codObj || maxCodObj <= 0)
+        return NULL;
+
+    /* estimate buffer size: allow up to 11 chars per int + 1 space, plus final NUL */
+    size_t per_int = 4;
+    size_t buf_size = (size_t)maxCodObj * per_int + 1;
+    char *codObjString = (char *)malloc(buf_size);
+    if (!codObjString)
+        return NULL;
+
+    char *p = codObjString;
+    size_t remaining = buf_size;
+    int written = 0;
+
+    for (int i = 0; i < codObj->tamanho && i < maxCodObj; i++)
+    {
+        if (i == 0)
+            written = snprintf(p, remaining, "%d", codObj->memoria[i]);
+        else
+            written = snprintf(p, remaining, " %d", codObj->memoria[i]);
+
+        if (written < 0 || (size_t)written >= remaining)
+        {
+            /* safety: ensure NUL termination and return what we have */
+            codObjString[buf_size - 1] = '\0';
+            return codObjString;
+        }
+
+        p += written;
+        remaining -= written;
+    }
+
+    return codObjString;
+}
+
+int resolvePendencias(TabelaSimbolo *ts, int maxTs, CodigoObj *codObj, int maxCodObj)
+{
+    for (int t = 0; t < maxTs; t++)
+    {
+        TabelaSimbolo lineSimb = ts[t];
+        int valueSimb;
+        if (lineSimb.def)
+        {
+            valueSimb = lineSimb.valor;
+
+            for (int p = 0; p < lineSimb.num_pendencias; p++)
+            {
+                int pendencia = lineSimb.pendencias[p];
+
+                /* valida índice e escreve o valor no endereço da pendência */
+                if (pendencia >= 0 && pendencia < maxCodObj && pendencia < codObj->tamanho)
+                {
+                    codObj->memoria[pendencia] = valueSimb;
+                }
+            }
+        }
+    }
+
+    return 1;
+}
+
+int writePendenciasOnFile(char *pendencias, FILE *file, int lineToWrite)
+{
+    if (!pendencias || !file || lineToWrite < 1)
+        return 0;
+
+    // Reposiciona para o início do arquivo
+    rewind(file);
+
+    char buffer[1024];
+    int currentLine = 1;
+
+    // Percorre até a linha anterior à desejada
+    while (currentLine < lineToWrite && fgets(buffer, sizeof(buffer), file) != NULL)
+    {
+        currentLine++;
+    }
+
+    if (currentLine == lineToWrite)
+    {
+        // Move para a posição do início da linha que queremos sobrescrever
+        long pos = ftell(file);
+        fseek(file, pos, SEEK_SET);
+
+        // Escreve a string na linha
+        fprintf(file, "%s", pendencias);
+        return 1;
+    }
+    else if (currentLine < lineToWrite)
+    {
+        // A linha desejada ainda não existe; adicionar novas linhas em branco até chegar nela
+        fseek(file, 0, SEEK_END);
+
+        while (currentLine < lineToWrite)
+        {
+            // fprintf(file, "\n");
+            currentLine++;
+        }
+
+        fprintf(file, "%s", pendencias);
+        return 1;
+    }
+
+    return 0;
+}
+
+int makeO1(TabelaSimbolo *ts, int maxTs, CodigoObj *codObj, int maxCodObj, FILE *arquivoSaidaO1)
+{
+    char *codObjString = CodigoObjToString(codObj, maxCodObj);
+    char *listaPendenciasString = printListaPendencias(ts, maxTs);
+
+    int a = writeCodObjOnFile(codObjString, arquivoSaidaO1, 1);
+    int b = writePendenciasOnFile(listaPendenciasString, arquivoSaidaO1, 2);
+    return 0;
+}
+
+int makeO2(TabelaSimbolo *ts, int maxTs, CodigoObj *codObj, int maxCodObj, FILE *arquivoSaidaO2)
+{
+    int isResolved = resolvePendencias(ts, maxTs, codObj, maxCodObj);
+    char *codObjString;
+    if (isResolved)
+    {
+        codObjString = CodigoObjToString(codObj, maxCodObj);
+
+        if (writeCodObjOnFile(codObjString, arquivoSaidaO2, 1))
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int verifyLabel(char *label)
+{
+    // Verifica se label é NULL ou vazia
+    if (label == NULL || label == '\0')
+    {
+        return 0; // Inválida
+    }
+
+    // Verifica primeiro caractere
+    char first = label[0];
+    if ((first < 'a' || first > 'z') &&
+        (first < 'A' || first > 'Z') &&
+        first != '_')
+    {
+        return 0; // Inválida - não começa com letra ou underscore
+    }
+
+    // Verifica resto dos caracteres
+    for (int i = 1; label[i] != '\0'; i++)
+    {
+        char c = label[i];
+        if ((c < 'a' || c > 'z') &&
+            (c < 'A' || c > 'Z') &&
+            (c < '0' || c > '9') &&
+            c != '_')
+        {
+            return 0; // Inválida - contém caractere especial
+        }
+    }
+
+    return 1; // Válida
+}
+
+int verifyQuantLabelAtLine(char *line)
+{
+    // Verifica se line é NULL
+    if (line == NULL)
+    {
+        return 1; // Válido
+    }
+
+    int colonCount = 0;
+    int inString = 0; // Flag para rastrear se está dentro de string
+
+    // Percorre a linha
+    for (int i = 0; line[i] != '\0'; i++)
+    {
+        // Ignora caracteres dentro de strings (entre aspas)
+        if (line[i] == '"' && (i == 0 || line[i - 1] != '\\'))
+        {
+            inString = !inString;
+            continue;
+        }
+
+        // Se encontrar comentário (';'), para de verificar
+        if (line[i] == ';' && !inString)
+        {
+            break;
+        }
+
+        // Conta ':' fora de strings e comentários
+        if (line[i] == ':' && !inString)
+        {
+            colonCount++;
+        }
+    }
+
+    // Se houver 2 ou mais ':', há múltiplos rótulos
+    if (colonCount >= 2)
+    {
+        return 0; // Inválido
+    }
+
+    return 1; // Válido
+}
 
 void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO2)
 {
@@ -904,11 +1154,24 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
     char *tokens[1024]; // array para armazenar os tokens da linha
     int word_count;
 
+    CodigoObj codigo;
+    TabelaSimbolo tabelaSimbolos[MAX_QTD_SIMBOLOS];
+    int qtd_simbolos = 0;
+    Mnemonic mnemonicTable[MAX_MNEMONIC];
+    int qtd_mnemonicos = loadMnemonics("upcode.txt", mnemonicTable, MAX_MNEMONIC);
+    int current_line = 0;
+
     // Ler o arquivo de entrada linha por linha
     while (fgets(linha, sizeof(linha), arquivoEntrada) != NULL)
     {
-        // printf("%s", linha);
-        //  Obter tokens da linha, usando separador
+        current_line++;
+
+        if (!verifyQuantLabelAtLine(linha))
+        {
+            printf("-- ERRO: Multiplos rotulos na linha [%d]: [%s]\n", current_line, linha);
+            continue;
+        }
+
         word_count = separador(linha, tokens);
 
         char *label = NULL;
@@ -925,6 +1188,13 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 // Remove ':' do label
                 tokens[0][len - 1] = '\0';
                 label = tokens[0];
+
+                if (!verifyLabel(label))
+                {
+                    printf("-- ERRO: Erro lexico na linha [%d]: [%s]\n", current_line, label);
+                    continue;
+                }
+
                 if (word_count > 1)
                 {
                     opr = tokens[1];
@@ -942,17 +1212,147 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
                 if (word_count > 2)
                     arg2 = tokens[2];
             }
-            // Opcional: imprimir os tokens separados para conferência
-            fputs(linha, arquivoSaidaO2);
-            fprintf(arquivoSaidaO2, "Label: |%s|\n", label ? label : "(null)");
-            fprintf(arquivoSaidaO2, "OPR: |%s|\n", opr ? opr : "(null)");
-            fprintf(arquivoSaidaO2, "Arg1: |%s|\n", arg1 ? arg1 : "(null)");
-            fprintf(arquivoSaidaO2, "Arg2: |%s|\n", arg2 ? arg2 : "(null)");
 
-            // Escreve o conteúdo da linha nos arquivos de saída
+            if (label)
+            {
+                int labelInTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, label);
+                if (labelInTS != -1)
+                {
+                    if (tabelaSimbolos[labelInTS].def == 0)
+                    {
+                        tabelaSimbolos[labelInTS].def = 1;
+                        tabelaSimbolos[labelInTS].valor = (codigo.tamanho);
+                    }
+                    else
+                    {
+                        printf("-- ERRO: Rotulo [%s] sendo declarado novamente na linha [%d]\n", label, current_line); // ERRO: rotulo declarado duas vezes em lugares diferentes
+                    }
+                }
+                else
+                {
+                    insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, label, (codigo.tamanho), 1);
+                }
+            }
+            if (opr)
+            {
 
-            fputs(linha, arquivoSaidaO1);
-            // fputs(linha, arquivoSaidaO2);
+                if (strcmp(opr, "SPACE") == 0)
+                {
+                    if (arg2)
+                    {
+                        printf("-- ERRO: Quantidade de argumentos invalida para instrucao [%s] na linha [%d]\n", opr, current_line); // ERRO: instrução com número de parâmetros errado
+                    }
+
+                    if (!label)
+                    {
+                        printf("-- ERRO: [%s] na linha [%d] nao tem rotulo sendo declarado\n", opr, current_line);
+                    }
+                    if (arg1)
+                    {
+                        int arg = atoi(arg1);
+                        if (arg <= 0)
+                        {
+                            // ERRO: SPACE requer número > 0
+                        }
+                        for (size_t i = 0; i < arg; i++)
+                        {
+                            insertInCodigoObj(&codigo, 0);
+                        }
+                    }
+                    else
+                    {
+                        insertInCodigoObj(&codigo, 0); // Padrão: 1 palavra
+                    }
+                }
+                else if ((strcmp(opr, "CONST") == 0))
+                {
+                    if (arg2)
+                    {
+                        printf("-- ERRO: Quantidade de argumentos invalida para instrucao [%s] na linha [%d]\n", opr, current_line); // ERRO: instrução com número de parâmetros errado
+                    }
+
+                    if (!label)
+                    {
+                        printf("-- ERRO: [%s] na linha [%d] nao tem rotulo sendo declarado\n", opr, current_line);
+                    }
+                    if (arg1)
+                    {
+                        insertInCodigoObj(&codigo, atoi(arg1));
+                    }
+                    else
+                    {
+                        printf("-- ERRO: Quantidade de argumentos invalida para instrucao [%s] na linha [%d]\n", opr, current_line); // ERRO: instrução com número de parâmetros errado
+                    }
+                }
+                else
+                {
+                    int opcode_index = findMnemonic(opr, mnemonicTable, qtd_mnemonicos);
+                    int opcode;
+                    if (opcode_index != -1)
+                    {
+                        opcode = mnemonicTable[opcode_index].opcode;
+                    }
+                    else
+                    {
+                        printf("-- ERRO: Instrucao na linha [%d] [%s] eh invalida\n", current_line, opr);
+                        opcode = -1;
+                    }
+
+                    int arg_count = 0;
+                    if (arg1)
+                    {
+                        arg_count++;
+                    }
+                    if (arg2)
+                    {
+                        arg_count++;
+                    }
+                    if (mnemonicTable[opcode_index].quantArgs != arg_count)
+                    {
+                        printf("-- ERRO: Quantidade de argumentos invalida para instrucao [%s] na linha [%d]\n", opr, current_line); // ERRO: instrução com número de parâmetros errado
+                    }
+
+                    insertInCodigoObj(&codigo, opcode);
+                    if (arg1)
+                    {
+                        int arg1InTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, arg1);
+                        if (arg1InTS == -1)
+                        {
+                            int novo_simb = insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, arg1, 0, 0);
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[novo_simb], (codigo.tamanho));
+                            insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
+                        }
+                        else if (tabelaSimbolos[arg1InTS].def == 0)
+                        {
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[arg1InTS], (codigo.tamanho));
+                            insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
+                        }
+                        else
+                        {
+                            insertInCodigoObj(&codigo, tabelaSimbolos[arg1InTS].valor);
+                        }
+                    }
+                    if (arg2)
+                    {
+                        int arg2InTS = findSimboloTabela(tabelaSimbolos, qtd_simbolos, arg2);
+                        if (arg2InTS == -1)
+                        {
+                            int novo_simb = insertSimboloTabela(tabelaSimbolos, &qtd_simbolos, MAX_QTD_SIMBOLOS, arg2, 0, 0);
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[novo_simb], (codigo.tamanho));
+                            insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
+                        }
+                        else if (tabelaSimbolos[arg2InTS].def == 0)
+                        {
+                            insertPendenciaAtSimbolo(&tabelaSimbolos[arg2InTS], (codigo.tamanho));
+                            insertInCodigoObj(&codigo, 0); // Com aritmética de ponteiros, o 0 aqui vira o número sendo somado
+                        }
+                        else
+                        {
+                            insertInCodigoObj(&codigo, tabelaSimbolos[arg2InTS].valor);
+                        }
+                    }
+                }
+            }
 
             for (int i = 0; i < word_count; i++)
             {
@@ -960,6 +1360,23 @@ void compileFile(FILE *arquivoEntrada, FILE *arquivoSaidaO1, FILE *arquivoSaidaO
             }
         }
     }
+
+    for (size_t i = 0; i < qtd_simbolos; i++)
+    {
+        if (tabelaSimbolos[i].def == 0)
+        {
+            printf("-- ERRO: Rotulo [%s] nao declarado\n", tabelaSimbolos[i].simbolo); // ERRO: rotulo não declarado
+        }
+    }
+
+    char *codObjString = CodigoObjToString(&codigo, codigo.tamanho);
+    char *list = printListaPendencias(tabelaSimbolos, tabelaSimbolos->num_pendencias);
+
+    // funcao de montagem do o1
+    int hasWritedO1 = makeO1(tabelaSimbolos, qtd_simbolos, &codigo, codigo.tamanho, arquivoSaidaO1);
+
+    // funcao de montagem do o2
+    int hasWritedO2 = makeO2(tabelaSimbolos, qtd_simbolos, &codigo, codigo.tamanho, arquivoSaidaO2);
 }
 
 int main(int argc, char *argv[])
@@ -980,7 +1397,7 @@ int main(int argc, char *argv[])
 
     int result_preprocess = preprocess(argv[1], output_pre_filename);
 
-    if (result_preprocess == 0)
+    if (result_preprocess == 1)
     {
         printf("Arquivo .pre gerado: %s\n", output_pre_filename);
 
@@ -1029,17 +1446,11 @@ int main(int argc, char *argv[])
             fclose(arquivoSaidaO1);
             return EXIT_FAILURE;
         }
-
-        printf("--- Conteudo de %s (impresso no console) ---\n", nomeArquivoEntrada);
-
         // Chamada para a função de processamento
         compileFile(arquivoEntrada, arquivoSaidaO1, arquivoSaidaO2);
 
-        printf("------------------------------------------------\n");
-        printf("Arquivo lido e copiado de %s para %s com sucesso!\n",
+        printf("Arquivo %s compilado com sucesso!\n",
                nomeArquivoEntrada, nomeArquivoSaidaO1);
-        printf("Arquivo lido e copiado de %s para %s com sucesso!\n",
-               nomeArquivoEntrada, nomeArquivoSaidaO2);
 
         fclose(arquivoEntrada);
         fclose(arquivoSaidaO1);

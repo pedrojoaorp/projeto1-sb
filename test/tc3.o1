@@ -1,26 +1,32 @@
-0 0 0 0 0 0 0 0 0 0 0 0
+-1 0 0 -1 0 0 -1 0 0 -1 0 0
 LISTA DE PENDENCIAS:
 Simb: ZERO
 Valor: 0
 Def: 1
 Pendencias: 
+
 Simb: a
 Valor: 0
 Def: 0
-Pendencias: 1 4 7 10 
+Pendencias: 1, 4, 7, 10
+
 Simb: b
 Valor: 0
 Def: 0
-Pendencias: 2 5 8 11 
+Pendencias: 2, 5, 8, 11
+
 Simb: _ZERO
 Valor: 3
 Def: 1
 Pendencias: 
+
 Simb: ZERO_1
 Valor: 6
 Def: 1
 Pendencias: 
+
 Simb: _0ZERO
 Valor: 9
 Def: 1
 Pendencias: 
+
