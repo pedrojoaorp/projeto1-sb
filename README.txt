@@ -10,7 +10,7 @@ Windows:
 ./compilador arquivo.asm
 
 Linux: 
-./compilador arquivo.asm
+./compilador.exe arquivo.asm
 
 OBS: Após execução do compilador, os resultados estarão nos arquivos .pre, o1 e o2 deste diretório. 
 
@@ -20,4 +20,4 @@ Windows:
 gcc version 6.3.0 (MinGW.org GCC-6.3.0-1)
 
 Linux: 
-gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
+gcc (Debian 14.3.0-5) 14.3.0
